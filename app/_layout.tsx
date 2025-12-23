@@ -24,7 +24,7 @@ const RootLayoutNav = () => {
   const inTabs = currentGroup === "(tabs)";
   const inCreate = currentGroup === "create-task" || currentGroup === "create-project";
 
-  let redirectTo: string | null = null;
+  let redirectTo: "/(onboarding)" | "/(auth)" | "/(tabs)" | null = null;
   if (ready) {
     if (isFirstLaunch && !inOnboarding) {
       redirectTo = "/(onboarding)";
