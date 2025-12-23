@@ -7,10 +7,11 @@ import { AppInput } from "../../components/common/AppInput";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
 import { typography } from "../../theme/typography";
-import { useAuthStore } from "../../state/authStore";
+import { useAppDispatch } from "../../state/hooks";
+import { signIn } from "../../state/authSlice";
 
 export const SignInScreen: React.FC = () => {
-  const signIn = useAuthStore((state) => state.signIn);
+  const dispatch = useAppDispatch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isHidden, setIsHidden] = useState(true);
@@ -61,7 +62,7 @@ export const SignInScreen: React.FC = () => {
           </Pressable>
           <Text style={styles.link}>Forgot Password</Text>
         </View>
-        <AppButton title="Sign In" onPress={signIn} />
+        <AppButton title="Sign In" onPress={() => dispatch(signIn())} />
         <Text style={styles.footerText}>
           Don&apos;t have an account? <Text style={styles.link}>Sign Up Here</Text>
         </Text>

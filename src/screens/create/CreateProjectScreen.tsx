@@ -1,17 +1,14 @@
 import React, { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useRouter } from "expo-router";
 import { AppButton } from "../../components/common/AppButton";
 import { AppInput } from "../../components/common/AppInput";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
-import { MainStackParamList } from "../../navigation/types";
 
 export const CreateProjectScreen: React.FC = () => {
-  const navigation =
-    useNavigation<NativeStackNavigationProp<MainStackParamList>>();
+  const router = useRouter();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
 
@@ -31,7 +28,7 @@ export const CreateProjectScreen: React.FC = () => {
         onChangeText={setDescription}
       />
       <View style={styles.spacer} />
-      <AppButton title="Save" onPress={() => navigation.goBack()} />
+      <AppButton title="Save" onPress={() => router.back()} />
     </SafeAreaView>
   );
 };

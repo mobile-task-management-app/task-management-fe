@@ -7,10 +7,11 @@ import { AppInput } from "../../components/common/AppInput";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
 import { typography } from "../../theme/typography";
-import { useAuthStore } from "../../state/authStore";
+import { useAppDispatch } from "../../state/hooks";
+import { signIn } from "../../state/authSlice";
 
 export const SignUpScreen: React.FC = () => {
-  const signIn = useAuthStore((state) => state.signIn);
+  const dispatch = useAppDispatch();
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
@@ -84,7 +85,7 @@ export const SignUpScreen: React.FC = () => {
           <Text style={styles.link}>privacy policy</Text>
         </Text>
       </Pressable>
-      <AppButton title="Sign Up" onPress={signIn} />
+      <AppButton title="Sign Up" onPress={() => dispatch(signIn())} />
       <Text style={styles.footerText}>
         Already have an account? <Text style={styles.link}>Sign in here</Text>
       </Text>

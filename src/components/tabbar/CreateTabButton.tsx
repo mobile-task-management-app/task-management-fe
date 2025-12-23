@@ -3,18 +3,22 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
-import { useUIStore } from "../../state/uiStore";
+import { useAppDispatch } from "../../state/hooks";
+import { openCreateModal } from "../../state/uiSlice";
 
 type CreateTabButtonProps = {
   accessibilityState?: { selected?: boolean };
 };
 
 export const CreateTabButton: React.FC<CreateTabButtonProps> = () => {
-  const openCreateModal = useUIStore((state) => state.openCreateModal);
+  const dispatch = useAppDispatch();
 
   return (
     <View style={styles.wrapper}>
-      <Pressable style={styles.button} onPress={openCreateModal}>
+      <Pressable
+        style={styles.button}
+        onPress={() => dispatch(openCreateModal())}
+      >
         <Ionicons name="add" size={26} color="#FFFFFF" />
       </Pressable>
     </View>

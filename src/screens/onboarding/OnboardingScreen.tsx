@@ -5,10 +5,11 @@ import { AppButton } from "../../components/common/AppButton";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
 import { typography } from "../../theme/typography";
-import { useAuthStore } from "../../state/authStore";
+import { useAppDispatch } from "../../state/hooks";
+import { finishOnboarding } from "../../state/authSlice";
 
 export const OnboardingScreen: React.FC = () => {
-  const finishOnboarding = useAuthStore((state) => state.finishOnboarding);
+  const dispatch = useAppDispatch();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -23,7 +24,10 @@ export const OnboardingScreen: React.FC = () => {
           <View style={styles.dot} />
           <View style={styles.dot} />
         </View>
-        <AppButton title="Get Started" onPress={finishOnboarding} />
+        <AppButton
+          title="Get Started"
+          onPress={() => dispatch(finishOnboarding())}
+        />
       </View>
     </SafeAreaView>
   );

@@ -1,17 +1,14 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useRouter } from "expo-router";
 import { AppButton } from "../../components/common/AppButton";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
 import { typography } from "../../theme/typography";
-import { AuthStackParamList } from "../../navigation/types";
 
 export const AuthLandingScreen: React.FC = () => {
-  const navigation =
-    useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
+  const router = useRouter();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -25,12 +22,12 @@ export const AuthLandingScreen: React.FC = () => {
         </Text>
         <AppButton
           title="Sign In"
-          onPress={() => navigation.navigate("SignIn")}
+          onPress={() => router.push("/(auth)/sign-in")}
         />
         <AppButton
           title="Sign Up"
           variant="outline"
-          onPress={() => navigation.navigate("SignUp")}
+          onPress={() => router.push("/(auth)/sign-up")}
         />
       </View>
     </SafeAreaView>

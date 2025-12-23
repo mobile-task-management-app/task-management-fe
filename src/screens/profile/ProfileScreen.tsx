@@ -5,10 +5,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
 import { mockUser } from "../../data/mock";
-import { useAuthStore } from "../../state/authStore";
+import { useAppDispatch } from "../../state/hooks";
+import { signOut } from "../../state/authSlice";
 
 export const ProfileScreen: React.FC = () => {
-  const signOut = useAuthStore((state) => state.signOut);
+  const dispatch = useAppDispatch();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -29,7 +30,12 @@ export const ProfileScreen: React.FC = () => {
       <Section title="SETTINGS">
         <ProfileItem icon="cube" label="Versioning" showChevron />
         <ProfileItem icon="help-circle" label="FAQ and Help" showChevron />
-        <ProfileItem icon="log-out" label="Logout" danger onPress={signOut} />
+        <ProfileItem
+          icon="log-out"
+          label="Logout"
+          danger
+          onPress={() => dispatch(signOut())}
+        />
       </Section>
     </SafeAreaView>
   );

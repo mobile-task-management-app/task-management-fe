@@ -38,6 +38,8 @@ export const ProjectsScreen: React.FC = () => {
 };
 
 const ProjectRow: React.FC<{ project: Project }> = ({ project }) => {
+  const progressWidth = `${Math.round(project.progress * 100)}%` as `${number}%`;
+
   return (
     <View style={styles.card}>
       <View style={styles.rowBetween}>
@@ -54,7 +56,7 @@ const ProjectRow: React.FC<{ project: Project }> = ({ project }) => {
           <View
             style={[
               styles.progressFill,
-              { width: formatPercent(project.progress) },
+              { width: progressWidth },
             ]}
           />
         </View>
