@@ -24,6 +24,7 @@ const queryClient = new QueryClient({
 const RootLayoutNav = () => {
   const isFirstLaunch = useAppSelector((state) => state.auth.isFirstLaunch);
   const isAuthed = useAppSelector((state) => state.auth.isAuthed);
+  const isEmailVerified = useAppSelector((state) => state.auth.isEmailVerified);
   const segments = useSegments();
   const segmentsArray = Array.from(segments);
   const navigationState = useRootNavigationState();
@@ -37,14 +38,43 @@ const RootLayoutNav = () => {
     currentGroup === "create-task" || currentGroup === "create-project";
 
   let redirectTo: "/(onboarding)" | "/(auth)" | "/(tabs)" | null = null;
+  console.log(
+    "RootLayoutNav - isFirstLaunch:",
+    isFirstLaunch,
+    "isAuthed:",
+    isAuthed,
+    "isEmailVerified:",
+    isEmailVerified,
+    "segments:",
+    segmentsArray,
+    "inOnboarding:",
+    inOnboarding,
+    "inAuth:",
+    inAuth,
+    "inTabs:",
+    inTabs,
+    "inCreate:",
+    inCreate
+  );
   if (ready) {
     if (isFirstLaunch && !inOnboarding) {
       redirectTo = "/(onboarding)";
-    } else if (!isFirstLaunch && !isAuthed && !inAuth) {
+    } else if (!isFirstLaunch && !isAuthed && !isEmailVerified && !inAuth) {
       redirectTo = "/(auth)";
+    } else if (
+      !isFirstLaunch &&
+      isAuthed &&
+      isEmailVerified &&
+      !inTabs &&
+      !inCreate
+    ) {
+      redirectTo = "/(tabs)";
     } else if (!isFirstLaunch && isAuthed && !inTabs && !inCreate) {
       redirectTo = "/(tabs)";
     }
+    // else if (!isFirstLaunch && isAuthed && inTabs) {
+    //   redirectTo = "/(auth)";
+    // }
   }
 
   return (
