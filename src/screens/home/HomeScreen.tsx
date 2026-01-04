@@ -32,18 +32,8 @@ import { Project } from "../../types/models";
 export const HomeScreen: React.FC = () => {
   const { data, isLoading, isError } = useProfile();
 
-  // 1. Handle Loading State
-  if (isLoading) {
-    return <ActivityIndicator size="large" />;
-  }
-
-  if (isError || !data) {
-    return <Text>Could not load profile</Text>;
-  }
-
   // 3. Access data safely
   // Assuming your API returns { data: { first_name: '...' } }
-  const user = data.data;
   const { welcome } = useLocalSearchParams();
   const { height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -67,6 +57,15 @@ export const HomeScreen: React.FC = () => {
       router.setParams({ welcome: undefined });
     }
   }, [welcome]);
+  // 1. Handle Loading State
+  if (isLoading) {
+    return <ActivityIndicator size="large" />;
+  }
+
+  if (isError || !data) {
+    return <Text>Could not load profile</Text>;
+  }
+  const user = data.data;
 
   return (
     <SafeAreaView style={styles.container}>
