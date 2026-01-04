@@ -1,1 +1,1 @@
-export { AuthLandingScreen as default } from "../../src/screens/auth/AuthLandingScreen";
+export { OnboardingFinalScreen as default } from "../../src/screens/onboarding/OnboardingFinalScreen";
