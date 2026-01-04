@@ -1,14 +1,25 @@
-import React from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Redirect,
   Stack,
   useRootNavigationState,
   useSegments,
 } from "expo-router";
+import React from "react";
 import { Provider } from "react-redux";
-import { store } from "../src/state/store";
-import { useAppSelector } from "../src/state/hooks";
 import { CreateActionModal } from "../src/components/modals/CreateActionModal";
+import { useAppSelector } from "../src/state/hooks";
+import { store } from "../src/state/store";
+
+// 2. Create the Query Client instance
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+    },
+  },
+});
 
 const RootLayoutNav = () => {
   const isFirstLaunch = useAppSelector((state) => state.auth.isFirstLaunch);
@@ -22,7 +33,8 @@ const RootLayoutNav = () => {
   const inOnboarding = currentGroup === "(onboarding)";
   const inAuth = currentGroup === "(auth)";
   const inTabs = currentGroup === "(tabs)";
-  const inCreate = currentGroup === "create-task" || currentGroup === "create-project";
+  const inCreate =
+    currentGroup === "create-task" || currentGroup === "create-project";
 
   let redirectTo: "/(onboarding)" | "/(auth)" | "/(tabs)" | null = null;
   if (ready) {
@@ -49,9 +61,12 @@ const RootLayoutNav = () => {
 
 const RootLayout = () => {
   return (
-    <Provider store={store}>
-      <RootLayoutNav />
-    </Provider>
+    // 3. Wrap with QueryClientProvider
+    <QueryClientProvider client={queryClient}>
+      <Provider store={store}>
+        <RootLayoutNav />
+      </Provider>
+    </QueryClientProvider>
   );
 };
 

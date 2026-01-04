@@ -1,21 +1,26 @@
+import { useSignIn } from "@/hooks/useAuth";
+import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
 import { AppButton } from "../../components/common/AppButton";
 import { AppInput } from "../../components/common/AppInput";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
 import { typography } from "../../theme/typography";
-import { useAppDispatch } from "../../state/hooks";
-import { signIn } from "../../state/authSlice";
 
 export const SignInScreen: React.FC = () => {
-  const dispatch = useAppDispatch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isHidden, setIsHidden] = useState(true);
   const [remember, setRemember] = useState(false);
+  const { mutate } = useSignIn();
+  const handleSignIn = () => {
+    mutate({
+      email,
+      password,
+    });
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -47,7 +52,10 @@ export const SignInScreen: React.FC = () => {
           }
         />
         <View style={styles.rowBetween}>
-          <Pressable style={styles.remember} onPress={() => setRemember(!remember)}>
+          <Pressable
+            style={styles.remember}
+            onPress={() => setRemember(!remember)}
+          >
             <View
               style={[
                 styles.checkbox,
@@ -62,9 +70,10 @@ export const SignInScreen: React.FC = () => {
           </Pressable>
           <Text style={styles.link}>Forgot Password</Text>
         </View>
-        <AppButton title="Sign In" onPress={() => dispatch(signIn())} />
+        <AppButton title="Sign In" onPress={handleSignIn} />
         <Text style={styles.footerText}>
-          Don&apos;t have an account? <Text style={styles.link}>Sign Up Here</Text>
+          Don&apos;t have an account?{" "}
+          <Text style={styles.link}>Sign Up Here</Text>
         </Text>
       </View>
     </SafeAreaView>

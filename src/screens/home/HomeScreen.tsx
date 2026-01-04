@@ -1,16 +1,38 @@
-import React from "react";
-import { FlatList, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useProfile } from "@/hooks/useUsers";
 import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Card } from "../../components/common/Card";
 import { ProgressRingPlaceholder } from "../../components/common/ProgressRingPlaceholder";
 import { SectionHeader } from "../../components/common/SectionHeader";
+import { mockProjects } from "../../data/mock";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
-import { mockProjects, mockUser } from "../../data/mock";
 import { Project } from "../../types/models";
 
 export const HomeScreen: React.FC = () => {
+  const { data, isLoading, isError } = useProfile();
+
+  // 1. Handle Loading State
+  if (isLoading) {
+    return <ActivityIndicator size="large" />;
+  }
+
+  if (isError || !data) {
+    return <Text>Could not load profile</Text>;
+  }
+
+  // 3. Access data safely
+  // Assuming your API returns { data: { first_name: '...' } }
+  const user = data.data;
+
   return (
     <SafeAreaView style={styles.container}>
       <FlatList
@@ -22,11 +44,17 @@ export const HomeScreen: React.FC = () => {
             <View style={styles.header}>
               <View style={styles.avatar} />
               <View style={styles.headerInfo}>
-                <Text style={styles.name}>{mockUser.name}</Text>
-                <Text style={styles.email}>{mockUser.email}</Text>
+                <Text
+                  style={styles.name}
+                >{`${user.first_name} ${user.last_name}`}</Text>
+                <Text style={styles.email}>{user.email}</Text>
               </View>
               <View style={styles.notification}>
-                <Ionicons name="notifications" size={20} color={colors.primary} />
+                <Ionicons
+                  name="notifications"
+                  size={20}
+                  color={colors.primary}
+                />
               </View>
             </View>
             <Card style={styles.summaryCard}>
@@ -59,7 +87,9 @@ export const HomeScreen: React.FC = () => {
 const ProjectCard: React.FC<{ project: Project }> = ({ project }) => {
   return (
     <View style={styles.projectCard}>
-      <View style={[styles.projectIcon, { backgroundColor: project.accentColor }]}>
+      <View
+        style={[styles.projectIcon, { backgroundColor: project.accentColor }]}
+      >
         <Ionicons name="briefcase" size={16} color="#FFFFFF" />
       </View>
       <View style={styles.projectInfo}>
