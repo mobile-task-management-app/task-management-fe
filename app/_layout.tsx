@@ -1,18 +1,19 @@
-import React from "react";
 import {
   Redirect,
   Stack,
   useRootNavigationState,
   useSegments,
 } from "expo-router";
+import React from "react";
 import { Provider } from "react-redux";
-import { store } from "../src/state/store";
-import { useAppSelector } from "../src/state/hooks";
 import { CreateActionModal } from "../src/components/modals/CreateActionModal";
+import { useAppSelector } from "../src/state/hooks";
+import { store } from "../src/state/store";
 
 const RootLayoutNav = () => {
   const isFirstLaunch = useAppSelector((state) => state.auth.isFirstLaunch);
   const isAuthed = useAppSelector((state) => state.auth.isAuthed);
+  const isEmailVerified = useAppSelector((state) => state.auth.isEmailVerified);
   const segments = useSegments();
   const segmentsArray = Array.from(segments);
   const navigationState = useRootNavigationState();
@@ -25,14 +26,26 @@ const RootLayoutNav = () => {
   const inCreate = currentGroup === "create-task" || currentGroup === "create-project";
 
   let redirectTo: "/(onboarding)" | "/(auth)" | "/(tabs)" | null = null;
+  console.log("RootLayoutNav - isFirstLaunch:", isFirstLaunch, "isAuthed:", isAuthed, "isEmailVerified:", isEmailVerified, "segments:", segmentsArray, "inOnboarding:", inOnboarding, "inAuth:", inAuth, "inTabs:", inTabs, "inCreate:", inCreate);
   if (ready) {
     if (isFirstLaunch && !inOnboarding) {
       redirectTo = "/(onboarding)";
-    } else if (!isFirstLaunch && !isAuthed && !inAuth) {
+    } else if (!isFirstLaunch && !isAuthed && !isEmailVerified && !inAuth) {
       redirectTo = "/(auth)";
+    } else if (
+      !isFirstLaunch &&
+      isAuthed &&
+      isEmailVerified &&
+      !inTabs &&
+      !inCreate
+    ) {
+      redirectTo = "/(tabs)";
     } else if (!isFirstLaunch && isAuthed && !inTabs && !inCreate) {
       redirectTo = "/(tabs)";
     }
+    // else if (!isFirstLaunch && isAuthed && inTabs) {
+    //   redirectTo = "/(auth)";
+    // }
   }
 
   return (

@@ -1,16 +1,46 @@
-import React from "react";
-import { FlatList, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { AppButton } from "@/components/common/AppButton";
+import { signIn } from "@/state/authSlice";
+import { useAppDispatch } from "@/state/hooks";
 import { Ionicons } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useEffect, useRef, useState } from "react";
+import { Animated, FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Card } from "../../components/common/Card";
 import { ProgressRingPlaceholder } from "../../components/common/ProgressRingPlaceholder";
 import { SectionHeader } from "../../components/common/SectionHeader";
+import { mockProjects, mockUser } from "../../data/mock";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
-import { mockProjects, mockUser } from "../../data/mock";
 import { Project } from "../../types/models";
 
+
 export const HomeScreen: React.FC = () => {
+  const { welcome } = useLocalSearchParams();
+  const { height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+
+  const dispatch = useAppDispatch();
+
+  const [showWelcome, setShowWelcome] = useState(false);
+  const translateY = useRef(new Animated.Value(height)).current;
+
+  useEffect(() => {
+    console.log("welcome param:", welcome);
+    if (welcome === "1") {
+      setShowWelcome(true);
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: 350,
+        useNativeDriver: true,
+      }).start();
+
+      // clear param
+      router.setParams({ welcome: undefined });
+    }
+  }, [welcome]);
+
   return (
     <SafeAreaView style={styles.container}>
       <FlatList
@@ -52,6 +82,52 @@ export const HomeScreen: React.FC = () => {
         renderItem={({ item }) => <ProjectCard project={item} />}
         ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
       />
+      {showWelcome && (
+        <>
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={() => setShowWelcome(false)}
+          >
+            <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
+          </Pressable>
+
+          <Animated.View
+            style={[
+              styles.welcomeSheet,
+              {
+                paddingBottom: insets.bottom + spacing.lg,
+                transform: [{ translateY }],
+              },
+            ]}
+          >
+            <View style={styles.sheetHandle} />
+
+            <View style={styles.welcomeIcon}>
+              <Ionicons name="person" size={28} color="#FFF" />
+            </View>
+
+            <Text style={styles.welcomeTitle}>Welcome To TaskFlow!</Text>
+
+            <Text style={styles.welcomeSubtitle}>
+              To enhance your experience, please set up your profile first.
+            </Text>
+            <View style={styles.buttonGroup}>
+              <AppButton title="Set Up My Profile" onPress={() => {
+                                          router.push('/(tabs)/profile');
+                                        }} />
+              <AppButton
+                title="Explore The App First"
+                variant="outline"
+                onPress={() => {
+                  dispatch(signIn());
+                  setShowWelcome(false);
+                }}
+              />
+            </View>
+          </Animated.View>
+        </>
+      )}
+
     </SafeAreaView>
   );
 };
@@ -180,5 +256,58 @@ const styles = StyleSheet.create({
   projectSubtitle: {
     fontSize: 12,
     color: colors.textMuted,
+  },
+
+  welcomeSheet: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "#FFF",
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    padding: spacing.xl,
+    paddingBottom: spacing.xl + 12,
+    elevation: 30,
+  },
+
+  sheetHandle: {
+    width: 40,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: "#D1D5DB",
+    alignSelf: "center",
+    marginBottom: spacing.lg,
+  },
+
+  welcomeIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "center",
+    marginBottom: spacing.md,
+  },
+
+  welcomeTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: colors.text,
+    textAlign: "center",
+    marginBottom: spacing.sm,
+  },
+
+  welcomeSubtitle: {
+    fontSize: 14,
+    color: colors.textMuted,
+    textAlign: "center",
+    lineHeight: 20,
+    marginBottom: spacing.lg,
+  },
+  buttonGroup: {
+      width: "100%",
+      gap: 12,
   },
 });
