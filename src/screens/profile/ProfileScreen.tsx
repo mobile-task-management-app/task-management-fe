@@ -1,12 +1,13 @@
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import { mockUser } from "../../data/mock";
+import { signOut } from "../../state/authSlice";
+import { useAppDispatch } from "../../state/hooks";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
-import { mockUser } from "../../data/mock";
-import { useAppDispatch } from "../../state/hooks";
-import { signOut } from "../../state/authSlice";
 
 export const ProfileScreen: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -24,7 +25,9 @@ export const ProfileScreen: React.FC = () => {
         <ProfileItem icon="location" label="Taman Anggrek" />
       </Section>
       <Section title="ACCOUNT">
-        <ProfileItem icon="person" label="Personal Data" showChevron />
+        <ProfileItem  onPress={() => {
+           router.push("/update-profile")} 
+           } icon="person" label="Personal Data" showChevron />
         <ProfileItem icon="lock-closed" label="Change Password" showChevron />
       </Section>
       <Section title="SETTINGS">

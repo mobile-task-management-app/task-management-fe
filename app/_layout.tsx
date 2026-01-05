@@ -64,14 +64,15 @@ const RootLayoutNav = () => {
     } else if (
       !isFirstLaunch &&
       isAuthed &&
-      isEmailVerified &&
-      !inTabs &&
+      // isEmailVerified &&
+      // !inTabs &&
       !inCreate
     ) {
       redirectTo = "/(tabs)";
-    } else if (!isFirstLaunch && isAuthed && !inTabs && !inCreate) {
-      redirectTo = "/(tabs)";
-    }
+    } 
+    // else if (!isFirstLaunch && isAuthed && !inTabs && !inCreate) {
+    //   redirectTo = "/(tabs)";
+    // }
     // else if (!isFirstLaunch && isAuthed && inTabs) {
     //   redirectTo = "/(auth)";
     // }
