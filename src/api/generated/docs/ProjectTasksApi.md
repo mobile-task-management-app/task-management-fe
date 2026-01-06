@@ -76,9 +76,23 @@ const configuration = new Configuration();
 const apiInstance = new ProjectTasksApi(configuration);
 
 let id: number; //The ID of the project (default to undefined)
+let status: 'TODO' | 'IN_PROGRESS' | 'DONE' | 'CANCELLED'; //Filter tasks by their current status (optional) (default to undefined)
+let priority: 'LOW' | 'MEDIUM' | 'HIGH'; //Filter tasks by their priority (optional) (default to undefined)
+let categoryId: number; //Filter by category ID (optional) (default to undefined)
+let startDate: string; //Filter by start date. Supports single Unix timestamp or range (min,max) (optional) (default to undefined)
+let endDate: string; //Filter by end date. Supports single Unix timestamp or range (min,max) (optional) (default to undefined)
+let sort: string; //The field to sort the results by (optional) (default to 'created_at')
+let asc: boolean; //Sort order: true for ascending, false for descending (optional) (default to false)
 
 const { status, data } = await apiInstance.projectTaskControllerSearchProjectTasks(
-    id
+    id,
+    status,
+    priority,
+    categoryId,
+    startDate,
+    endDate,
+    sort,
+    asc
 );
 ```
 
@@ -87,6 +101,13 @@ const { status, data } = await apiInstance.projectTaskControllerSearchProjectTas
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
 | **id** | [**number**] | The ID of the project | defaults to undefined|
+| **status** | [**&#39;TODO&#39; | &#39;IN_PROGRESS&#39; | &#39;DONE&#39; | &#39;CANCELLED&#39;**]**Array<&#39;TODO&#39; &#124; &#39;IN_PROGRESS&#39; &#124; &#39;DONE&#39; &#124; &#39;CANCELLED&#39;>** | Filter tasks by their current status | (optional) defaults to undefined|
+| **priority** | [**&#39;LOW&#39; | &#39;MEDIUM&#39; | &#39;HIGH&#39;**]**Array<&#39;LOW&#39; &#124; &#39;MEDIUM&#39; &#124; &#39;HIGH&#39;>** | Filter tasks by their priority | (optional) defaults to undefined|
+| **categoryId** | [**number**] | Filter by category ID | (optional) defaults to undefined|
+| **startDate** | [**string**] | Filter by start date. Supports single Unix timestamp or range (min,max) | (optional) defaults to undefined|
+| **endDate** | [**string**] | Filter by end date. Supports single Unix timestamp or range (min,max) | (optional) defaults to undefined|
+| **sort** | [**string**] | The field to sort the results by | (optional) defaults to 'created_at'|
+| **asc** | [**boolean**] | Sort order: true for ascending, false for descending | (optional) defaults to false|
 
 
 ### Return type

@@ -4,6 +4,7 @@ import {
   AuthenticationApi,
   Configuration,
   ProjectsApi,
+  ProjectTasksApi,
   TasksApi,
   UsersApi,
 } from "./generated";
@@ -66,6 +67,10 @@ export const authApi = new AuthenticationApi(
 export const userApi = new UsersApi(apiConfig, BASE_URL, axiosInstance);
 export const projectApi = new ProjectsApi(apiConfig, BASE_URL, axiosInstance);
 export const taskApi = new TasksApi(apiConfig, BASE_URL, axiosInstance);
-
+export const projectTaskApi = new ProjectTasksApi(
+  apiConfig,
+  BASE_URL,
+  axiosInstance
+);
 // Export the axios instance in case you need to do manual calls
 export default axiosInstance;

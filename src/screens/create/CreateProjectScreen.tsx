@@ -5,6 +5,7 @@ import DateTimePicker, {
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
+  Alert,
   Modal,
   Platform,
   Pressable,
@@ -37,7 +38,16 @@ export const CreateProjectScreen: React.FC = () => {
   const [showSuccess, setShowSuccess] = useState(false);
 
   // Hook for API call
-  const { mutate, isPending } = useCreateProject();
+  const { mutate, isPending } = useCreateProject(
+    (response, variables) => {
+      setShowConfirm(false);
+      setShowSuccess(true);
+    },
+    (error) => {
+      console.error("Custom error handling:", error);
+      Alert.alert("Error", "Failed to create project. Please try again.");
+    }
+  );
 
   const onStartChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
     if (Platform.OS === "android") setShowStartPicker(false);
@@ -89,9 +99,6 @@ export const CreateProjectScreen: React.FC = () => {
       start_date: formattedStartDate,
       end_date: formattedEndDate,
     });
-
-    setShowConfirm(false);
-    setShowSuccess(true);
   };
 
   const handleViewProjects = () => {

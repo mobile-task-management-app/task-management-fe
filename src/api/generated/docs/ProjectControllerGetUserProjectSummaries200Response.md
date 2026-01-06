@@ -7,7 +7,7 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **success** | **boolean** |  | [default to undefined]
 **message** | **string** |  | [default to undefined]
-**data** | [**GetUserProjectSummariesRequestDTO**](GetUserProjectSummariesRequestDTO.md) |  | [default to undefined]
+**data** | [**GetUserProjectSummariesResponseDTO**](GetUserProjectSummariesResponseDTO.md) |  | [default to undefined]
 
 ## Example
 

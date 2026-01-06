@@ -1,3 +1,5 @@
+import { useGetProjectDetail } from "@/hooks/useProjects";
+import { useSearchProjectTasks } from "@/hooks/useTasks";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -16,10 +18,8 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import { AppButton } from "../../components/common/AppButton";
-import { useAppSelector } from "../../state/hooks";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
-import { ProjectTask, TaskStatus } from "../../types/models";
 
 const FILTERS = ["All", "In Progress", "Finish"] as const;
 
@@ -40,9 +40,9 @@ const formatDueDateLabel = (value?: string) => {
   });
 };
 
-const getProgressForStatus = (status: TaskStatus) => {
-  if (status === "Done") return 1;
-  if (status === "In Progress") return 0.6;
+const getProgressForStatus = (status: string) => {
+  if (status === "DONE") return 1;
+  if (status === "IN_PROGRESS") return 0.6;
   return 0.2;
 };
 
@@ -53,23 +53,24 @@ export const ProjectDetailScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const [filter, setFilter] = useState<FilterValue>("In Progress");
 
-  const projects = useAppSelector((state) => state.projects.projects);
-  const allTasks = useAppSelector((state) => state.tasks.tasks);
-  const project = useMemo(
-    () => projects.find((item) => item.id === projectId),
-    [projects, projectId]
+  const { data: projectData, isLoading: projectLoading } = useGetProjectDetail(
+    projectId || ""
   );
-  const tasks = useMemo(
-    () => allTasks.filter((task) => task.projectId === projectId),
-    [allTasks, projectId]
+
+  const { data: tasksData, isLoading: tasksLoading } = useSearchProjectTasks(
+    Number(projectId),
+    {}
   );
+
+  const tasks = tasksData?.data.tasks || [];
+  const project = projectData?.data;
 
   const summary = useMemo<SummaryCounts>(() => {
     return tasks.reduce(
       (acc, task) => {
-        if (task.status === "To do") acc.todo += 1;
-        if (task.status === "In Progress") acc.inProgress += 1;
-        if (task.status === "Done") acc.done += 1;
+        if (task.status === "TODO") acc.todo += 1;
+        if (task.status === "IN_PROGRESS") acc.inProgress += 1;
+        if (task.status === "DONE") acc.done += 1;
         return acc;
       },
       { todo: 0, inProgress: 0, done: 0 }
@@ -79,12 +80,20 @@ export const ProjectDetailScreen: React.FC = () => {
   const filteredTasks = useMemo(() => {
     if (filter === "All") return tasks;
     if (filter === "Finish") {
-      return tasks.filter((task) => task.status === "Done");
+      return tasks.filter((task) => task.status === "DONE");
     }
-    return tasks.filter((task) => task.status === filter);
+    return tasks.filter((task) => task.status === "IN_PROGRESS");
   }, [filter, tasks]);
 
   const headerHeight = Math.max(height * 0.2, 260);
+
+  if (projectLoading || tasksLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Text style={styles.fallbackTitle}>Loading...</Text>
+      </SafeAreaView>
+    );
+  }
 
   if (!project) {
     return (
@@ -118,7 +127,7 @@ export const ProjectDetailScreen: React.FC = () => {
             </Pressable>
             <View style={styles.headerContent}>
               <View style={styles.headerTextBlock}>
-                <Text style={styles.headerTitle}>{project.title}</Text>
+                <Text style={styles.headerTitle}>{project.name}</Text>
                 <Text style={styles.headerSubtitle}>
                   Let's tackle your to do list
                 </Text>
@@ -148,7 +157,8 @@ export const ProjectDetailScreen: React.FC = () => {
               <Ionicons name="document-text" size={42} color={colors.border} />
               <Text style={styles.emptyTitle}>No Tasks Assigned</Text>
               <Text style={styles.emptySubtitle}>
-                It looks like you don't have any tasks assigned to you right now.
+                It looks like you don't have any tasks assigned to you right
+                now.
               </Text>
             </View>
           ) : (
@@ -256,7 +266,9 @@ const FilterChips = ({
             >
               {item}
             </Text>
-            <View style={[styles.filterBadge, active && styles.filterBadgeActive]}>
+            <View
+              style={[styles.filterBadge, active && styles.filterBadgeActive]}
+            >
               <Text
                 style={[
                   styles.filterBadgeText,
@@ -273,13 +285,7 @@ const FilterChips = ({
   );
 };
 
-const TaskCard = ({
-  task,
-  onPress,
-}: {
-  task: ProjectTask;
-  onPress: () => void;
-}) => {
+const TaskCard = ({ task, onPress }: { task: any; onPress: () => void }) => {
   return (
     <Pressable style={styles.taskCard} onPress={onPress}>
       <View style={styles.taskHeader}>
