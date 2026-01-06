@@ -9,11 +9,14 @@ docs/AppApi.md
 docs/AppResponseDTO.md
 docs/AuthControllerVerifyOtp200Response.md
 docs/AuthenticationApi.md
+docs/GetUserProjectSummariesRequestDTO.md
 docs/LogInRequestDTO.md
 docs/ProjectControllerAddProject200Response.md
+docs/ProjectControllerGetUserProjectSummaries200Response.md
 docs/ProjectControllerSearchProject200Response.md
 docs/ProjectResponseDTO.md
 docs/ProjectStatus.md
+docs/ProjectSummaryResponseDTO.md
 docs/ProjectTaskControllerCreateProjectTask200Response.md
 docs/ProjectTaskControllerSearchProjectTasks200Response.md
 docs/ProjectTasksApi.md

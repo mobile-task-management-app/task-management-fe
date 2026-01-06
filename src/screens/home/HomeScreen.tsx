@@ -2,11 +2,12 @@ import { useProfile } from "@/hooks/useUsers";
 import { Ionicons } from "@expo/vector-icons";
 
 import { AppButton } from "@/components/common/AppButton";
+import { useGetUserProjectSummaries } from "@/hooks/useProjects";
 import { signIn } from "@/state/authSlice";
 import { useAppDispatch } from "@/state/hooks";
 import { BlurView } from "expo-blur";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
@@ -24,14 +25,11 @@ import {
 import { Card } from "../../components/common/Card";
 import { ProgressRingPlaceholder } from "../../components/common/ProgressRingPlaceholder";
 import { SectionHeader } from "../../components/common/SectionHeader";
-import { mockProjects } from "../../data/mock";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
 import { Project } from "../../types/models";
 
 export const HomeScreen: React.FC = () => {
-  const { data, isLoading, isError } = useProfile();
-
   // 3. Access data safely
   // Assuming your API returns { data: { first_name: '...' } }
   const { welcome } = useLocalSearchParams();
@@ -42,7 +40,16 @@ export const HomeScreen: React.FC = () => {
 
   const [showWelcome, setShowWelcome] = useState(false);
   const translateY = useRef(new Animated.Value(height)).current;
-
+  const {
+    data: profileData,
+    isLoading: profileLoading,
+    isError: profileError,
+  } = useProfile();
+  const {
+    data: projectsData,
+    isLoading: projectsLoading,
+    isError: projectsError,
+  } = useGetUserProjectSummaries();
   useEffect(() => {
     console.log("welcome param:", welcome);
     if (welcome === "1") {
@@ -58,21 +65,54 @@ export const HomeScreen: React.FC = () => {
     }
   }, [welcome]);
   // 1. Handle Loading State
-  if (isLoading) {
-    return <ActivityIndicator size="large" />;
+  const allProjects: Project[] = useMemo(() => {
+    return (
+      projectsData?.data.project_summaries.map(
+        (project): Project => ({
+          id: project.id,
+          title: project.name,
+          tasksCount: project.total_tasks,
+          progress:
+            Number(project.number_of_done_tasks / project.total_tasks) || 0,
+          status: project.status as Project["status"],
+          startDate: project.start_date
+            ? new Date(project.start_date * 1000).toLocaleDateString()
+            : "N/A",
+          endDate: project.end_date
+            ? new Date(project.end_date * 1000).toLocaleDateString()
+            : "N/A",
+          accentColor: "#5F3AF3", // You can vary this based on index if desired
+        })
+      ) || []
+    );
+  }, [projectsData]);
+
+  // 3. Global Loading/Error State
+  if (profileLoading || projectsLoading) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
   }
 
-  if (isError || !data) {
-    return <Text>Could not load profile</Text>;
+  if (profileError || projectsError || !profileData) {
+    console.log("Error loading data:", { projectsData });
+    return (
+      <View style={styles.centered}>
+        <Text>Could not load dashboard</Text>
+      </View>
+    );
   }
-  const user = data.data;
+
+  const user = profileData.data;
 
   return (
     <SafeAreaView style={styles.container}>
       <FlatList
         contentContainerStyle={styles.content}
-        data={mockProjects}
-        keyExtractor={(item) => item.id}
+        data={allProjects}
+        keyExtractor={(item) => item.id.toString()}
         ListHeaderComponent={
           <>
             <View style={styles.header}>
@@ -108,7 +148,7 @@ export const HomeScreen: React.FC = () => {
                 </View>
               </View>
             </Card>
-            <SectionHeader title="Projects" count={mockProjects.length} />
+            <SectionHeader title="Projects" count={allProjects.length} />
           </>
         }
         renderItem={({ item }) => <ProjectCard project={item} />}
@@ -192,6 +232,12 @@ const ProjectCard: React.FC<{ project: Project }> = ({ project }) => {
 };
 
 const styles = StyleSheet.create({
+  centered: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: colors.background, // Match the app theme
+  },
   container: {
     flex: 1,
     backgroundColor: colors.background,

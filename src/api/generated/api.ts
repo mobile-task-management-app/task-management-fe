@@ -51,6 +51,9 @@ export interface AuthControllerVerifyOtp200Response {
     'message': string;
     'data': TokenResponseDTO;
 }
+export interface GetUserProjectSummariesRequestDTO {
+    'project_summaries': Array<ProjectSummaryResponseDTO>;
+}
 export interface LogInRequestDTO {
     'email': string;
     'password': string;
@@ -59,6 +62,11 @@ export interface ProjectControllerAddProject200Response {
     'success': boolean;
     'message': string;
     'data': ProjectResponseDTO;
+}
+export interface ProjectControllerGetUserProjectSummaries200Response {
+    'success': boolean;
+    'message': string;
+    'data': GetUserProjectSummariesRequestDTO;
 }
 export interface ProjectControllerSearchProject200Response {
     'success': boolean;
@@ -116,6 +124,51 @@ export const ProjectStatus = {
 } as const;
 
 export type ProjectStatus = typeof ProjectStatus[keyof typeof ProjectStatus];
+
+
+export interface ProjectSummaryResponseDTO {
+    /**
+     * The unique identifier of the project
+     */
+    'id': number;
+    /**
+     * Name of the project
+     */
+    'name': string;
+    /**
+     * A brief description of the project
+     */
+    'description'?: string;
+    /**
+     * The ID of the user who owns the project
+     */
+    'owner_id': number;
+    /**
+     * Current status of the project
+     */
+    'status': ProjectStatus;
+    /**
+     * Project start date as a Unix timestamp (seconds)
+     */
+    'start_date'?: number;
+    /**
+     * Project end date as a Unix timestamp (seconds)
+     */
+    'end_date'?: number;
+    /**
+     * Creation timestamp
+     */
+    'created_at': number;
+    /**
+     * Last update timestamp
+     */
+    'updated_at': number;
+    'number_of_todo_tasks': number;
+    'num_of_in_progress_tasks': number;
+    'number_of_done_tasks': number;
+    'number_of_cancelled_tasks': number;
+    'total_tasks': number;
+}
 
 
 export interface ProjectTaskControllerCreateProjectTask200Response {
@@ -848,6 +901,36 @@ export const ProjectsApiAxiosParamCreator = function (configuration?: Configurat
         },
         /**
          * 
+         * @summary Get project summaries for a user
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        projectControllerGetUserProjectSummaries: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/v1/projects/summaries`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @summary Search and filter projects
          * @param {ProjectControllerSearchProjectStatusEnum} [status] Filter projects by their current status
          * @param {string} [startDate] Filter by start date. Supports single Unix timestamp or range (min,max)
@@ -991,6 +1074,18 @@ export const ProjectsApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @summary Get project summaries for a user
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async projectControllerGetUserProjectSummaries(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ProjectControllerGetUserProjectSummaries200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.projectControllerGetUserProjectSummaries(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['ProjectsApi.projectControllerGetUserProjectSummaries']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @summary Search and filter projects
          * @param {ProjectControllerSearchProjectStatusEnum} [status] Filter projects by their current status
          * @param {string} [startDate] Filter by start date. Supports single Unix timestamp or range (min,max)
@@ -1061,6 +1156,15 @@ export const ProjectsApiFactory = function (configuration?: Configuration, baseP
         },
         /**
          * 
+         * @summary Get project summaries for a user
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        projectControllerGetUserProjectSummaries(options?: RawAxiosRequestConfig): AxiosPromise<ProjectControllerGetUserProjectSummaries200Response> {
+            return localVarFp.projectControllerGetUserProjectSummaries(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @summary Search and filter projects
          * @param {ProjectControllerSearchProjectStatusEnum} [status] Filter projects by their current status
          * @param {string} [startDate] Filter by start date. Supports single Unix timestamp or range (min,max)
@@ -1122,6 +1226,16 @@ export class ProjectsApi extends BaseAPI {
      */
     public projectControllerGetProjectById(id: number, options?: RawAxiosRequestConfig) {
         return ProjectsApiFp(this.configuration).projectControllerGetProjectById(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Get project summaries for a user
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public projectControllerGetUserProjectSummaries(options?: RawAxiosRequestConfig) {
+        return ProjectsApiFp(this.configuration).projectControllerGetUserProjectSummaries(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

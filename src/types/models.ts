@@ -13,15 +13,31 @@ export type Task = {
   color: string;
 };
 
-export type ProjectStatus = "Overdue" | "In Progress" | "Done";
+export type ProjectStatus = "Not Yet" | "In Progress" | "Done";
+
+export type TaskStatus = "To do" | "In Progress" | "Done";
+export type TaskPriority = "Low" | "Medium" | "High";
+
+export type ProjectTask = {
+  id: string;
+  projectId: string;
+  title: string;
+  description?: string;
+  status: TaskStatus;
+  priority: TaskPriority;
+  dueDate?: string;
+  attachments: string[];
+  createdAt: string;
+};
 
 export type Project = {
-  id: string;
+  id: number;
   title: string;
+  description?: string;
   tasksCount: number;
   progress: number;
   status: ProjectStatus;
-  startDate: string;
-  endDate: string;
+  startDate?: string;
+  endDate?: string;
   accentColor: string;
 };
