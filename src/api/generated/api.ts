@@ -51,7 +51,7 @@ export interface AuthControllerVerifyOtp200Response {
     'message': string;
     'data': TokenResponseDTO;
 }
-export interface GetUserProjectSummariesRequestDTO {
+export interface GetUserProjectSummariesResponseDTO {
     'project_summaries': Array<ProjectSummaryResponseDTO>;
 }
 export interface LogInRequestDTO {
@@ -66,7 +66,7 @@ export interface ProjectControllerAddProject200Response {
 export interface ProjectControllerGetUserProjectSummaries200Response {
     'success': boolean;
     'message': string;
-    'data': GetUserProjectSummariesRequestDTO;
+    'data': GetUserProjectSummariesResponseDTO;
 }
 export interface ProjectControllerSearchProject200Response {
     'success': boolean;
@@ -174,18 +174,21 @@ export interface ProjectSummaryResponseDTO {
 export interface ProjectTaskControllerCreateProjectTask200Response {
     'success': boolean;
     'message': string;
-    'data': object;
+    'data': TaskAttachmentsUploadResponseDTO;
 }
 export interface ProjectTaskControllerSearchProjectTasks200Response {
     'success': boolean;
     'message': string;
-    'data': object;
+    'data': SearchProjectTaskResponseDTO;
 }
 export interface SearchProjectResponseDTO {
     /**
      * List of projects matching the search criteria
      */
     'projects': Array<ProjectResponseDTO>;
+}
+export interface SearchProjectTaskResponseDTO {
+    'tasks': Array<TaskResponseDTO>;
 }
 export interface SignUpRequestDTO {
     'email': string;
@@ -195,10 +198,48 @@ export interface SignUpRequestDTO {
     'phone_number': string;
     'date_of_birth': number;
 }
+export interface TaskAttachmentResponseDTO {
+    'id': number;
+    'name': string;
+    'size': number;
+    'extension': string;
+    'download_url'?: string;
+    'upload_url'?: string;
+}
+export interface TaskAttachmentsUploadResponseDTO {
+    'id': number;
+    'owner_id': number;
+    'title': string;
+    'project_id': number;
+    'status': string;
+    'priority': string;
+    'category_ids': Array<number>;
+    'attachments': Array<TaskAttachmentResponseDTO>;
+    'start_date': string;
+    'end_date': string;
+    'description': string;
+    'created_at': string;
+    'updated_at': string;
+}
 export interface TaskControllerGetTaskById200Response {
     'success': boolean;
     'message': string;
-    'data': object;
+    'data': TaskResponseDTO;
+}
+export interface TaskResponseDTO {
+    'id': number;
+    'owner_id': number;
+    'title': string;
+    'project_id': number;
+    'status': string;
+    'priority': string;
+    'category_ids': Array<number>;
+    'attachments': Array<TaskAttachmentResponseDTO>;
+    'start_date': string;
+    'end_date': string;
+    'description': string;
+    'created_at': string;
+    'updated_at': string;
 }
 export interface TokenResponseDTO {
     /**
@@ -661,10 +702,17 @@ export const ProjectTasksApiAxiosParamCreator = function (configuration?: Config
          * 
          * @summary Search and filter tasks within a specific project
          * @param {number} id The ID of the project
+         * @param {ProjectTaskControllerSearchProjectTasksStatusEnum} [status] Filter tasks by their current status
+         * @param {ProjectTaskControllerSearchProjectTasksPriorityEnum} [priority] Filter tasks by their priority
+         * @param {number} [categoryId] Filter by category ID
+         * @param {string} [startDate] Filter by start date. Supports single Unix timestamp or range (min,max)
+         * @param {string} [endDate] Filter by end date. Supports single Unix timestamp or range (min,max)
+         * @param {string} [sort] The field to sort the results by
+         * @param {boolean} [asc] Sort order: true for ascending, false for descending
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        projectTaskControllerSearchProjectTasks: async (id: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        projectTaskControllerSearchProjectTasks: async (id: number, status?: ProjectTaskControllerSearchProjectTasksStatusEnum, priority?: ProjectTaskControllerSearchProjectTasksPriorityEnum, categoryId?: number, startDate?: string, endDate?: string, sort?: string, asc?: boolean, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('projectTaskControllerSearchProjectTasks', 'id', id)
             const localVarPath = `/api/v1/projects/{id}/tasks`
@@ -679,6 +727,34 @@ export const ProjectTasksApiAxiosParamCreator = function (configuration?: Config
             const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+
+            if (status !== undefined) {
+                localVarQueryParameter['status'] = status;
+            }
+
+            if (priority !== undefined) {
+                localVarQueryParameter['priority'] = priority;
+            }
+
+            if (categoryId !== undefined) {
+                localVarQueryParameter['category_id'] = categoryId;
+            }
+
+            if (startDate !== undefined) {
+                localVarQueryParameter['start_date'] = startDate;
+            }
+
+            if (endDate !== undefined) {
+                localVarQueryParameter['end_date'] = endDate;
+            }
+
+            if (sort !== undefined) {
+                localVarQueryParameter['sort'] = sort;
+            }
+
+            if (asc !== undefined) {
+                localVarQueryParameter['asc'] = asc;
+            }
 
 
     
@@ -718,11 +794,18 @@ export const ProjectTasksApiFp = function(configuration?: Configuration) {
          * 
          * @summary Search and filter tasks within a specific project
          * @param {number} id The ID of the project
+         * @param {ProjectTaskControllerSearchProjectTasksStatusEnum} [status] Filter tasks by their current status
+         * @param {ProjectTaskControllerSearchProjectTasksPriorityEnum} [priority] Filter tasks by their priority
+         * @param {number} [categoryId] Filter by category ID
+         * @param {string} [startDate] Filter by start date. Supports single Unix timestamp or range (min,max)
+         * @param {string} [endDate] Filter by end date. Supports single Unix timestamp or range (min,max)
+         * @param {string} [sort] The field to sort the results by
+         * @param {boolean} [asc] Sort order: true for ascending, false for descending
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async projectTaskControllerSearchProjectTasks(id: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ProjectTaskControllerSearchProjectTasks200Response>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.projectTaskControllerSearchProjectTasks(id, options);
+        async projectTaskControllerSearchProjectTasks(id: number, status?: ProjectTaskControllerSearchProjectTasksStatusEnum, priority?: ProjectTaskControllerSearchProjectTasksPriorityEnum, categoryId?: number, startDate?: string, endDate?: string, sort?: string, asc?: boolean, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ProjectTaskControllerSearchProjectTasks200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.projectTaskControllerSearchProjectTasks(id, status, priority, categoryId, startDate, endDate, sort, asc, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['ProjectTasksApi.projectTaskControllerSearchProjectTasks']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -751,11 +834,18 @@ export const ProjectTasksApiFactory = function (configuration?: Configuration, b
          * 
          * @summary Search and filter tasks within a specific project
          * @param {number} id The ID of the project
+         * @param {ProjectTaskControllerSearchProjectTasksStatusEnum} [status] Filter tasks by their current status
+         * @param {ProjectTaskControllerSearchProjectTasksPriorityEnum} [priority] Filter tasks by their priority
+         * @param {number} [categoryId] Filter by category ID
+         * @param {string} [startDate] Filter by start date. Supports single Unix timestamp or range (min,max)
+         * @param {string} [endDate] Filter by end date. Supports single Unix timestamp or range (min,max)
+         * @param {string} [sort] The field to sort the results by
+         * @param {boolean} [asc] Sort order: true for ascending, false for descending
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        projectTaskControllerSearchProjectTasks(id: number, options?: RawAxiosRequestConfig): AxiosPromise<ProjectTaskControllerSearchProjectTasks200Response> {
-            return localVarFp.projectTaskControllerSearchProjectTasks(id, options).then((request) => request(axios, basePath));
+        projectTaskControllerSearchProjectTasks(id: number, status?: ProjectTaskControllerSearchProjectTasksStatusEnum, priority?: ProjectTaskControllerSearchProjectTasksPriorityEnum, categoryId?: number, startDate?: string, endDate?: string, sort?: string, asc?: boolean, options?: RawAxiosRequestConfig): AxiosPromise<ProjectTaskControllerSearchProjectTasks200Response> {
+            return localVarFp.projectTaskControllerSearchProjectTasks(id, status, priority, categoryId, startDate, endDate, sort, asc, options).then((request) => request(axios, basePath));
         },
     };
 };
@@ -780,14 +870,34 @@ export class ProjectTasksApi extends BaseAPI {
      * 
      * @summary Search and filter tasks within a specific project
      * @param {number} id The ID of the project
+     * @param {ProjectTaskControllerSearchProjectTasksStatusEnum} [status] Filter tasks by their current status
+     * @param {ProjectTaskControllerSearchProjectTasksPriorityEnum} [priority] Filter tasks by their priority
+     * @param {number} [categoryId] Filter by category ID
+     * @param {string} [startDate] Filter by start date. Supports single Unix timestamp or range (min,max)
+     * @param {string} [endDate] Filter by end date. Supports single Unix timestamp or range (min,max)
+     * @param {string} [sort] The field to sort the results by
+     * @param {boolean} [asc] Sort order: true for ascending, false for descending
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public projectTaskControllerSearchProjectTasks(id: number, options?: RawAxiosRequestConfig) {
-        return ProjectTasksApiFp(this.configuration).projectTaskControllerSearchProjectTasks(id, options).then((request) => request(this.axios, this.basePath));
+    public projectTaskControllerSearchProjectTasks(id: number, status?: ProjectTaskControllerSearchProjectTasksStatusEnum, priority?: ProjectTaskControllerSearchProjectTasksPriorityEnum, categoryId?: number, startDate?: string, endDate?: string, sort?: string, asc?: boolean, options?: RawAxiosRequestConfig) {
+        return ProjectTasksApiFp(this.configuration).projectTaskControllerSearchProjectTasks(id, status, priority, categoryId, startDate, endDate, sort, asc, options).then((request) => request(this.axios, this.basePath));
     }
 }
 
+export const ProjectTaskControllerSearchProjectTasksStatusEnum = {
+    Todo: 'TODO',
+    InProgress: 'IN_PROGRESS',
+    Done: 'DONE',
+    Cancelled: 'CANCELLED'
+} as const;
+export type ProjectTaskControllerSearchProjectTasksStatusEnum = typeof ProjectTaskControllerSearchProjectTasksStatusEnum[keyof typeof ProjectTaskControllerSearchProjectTasksStatusEnum];
+export const ProjectTaskControllerSearchProjectTasksPriorityEnum = {
+    Low: 'LOW',
+    Medium: 'MEDIUM',
+    High: 'HIGH'
+} as const;
+export type ProjectTaskControllerSearchProjectTasksPriorityEnum = typeof ProjectTaskControllerSearchProjectTasksPriorityEnum[keyof typeof ProjectTaskControllerSearchProjectTasksPriorityEnum];
 
 
 /**

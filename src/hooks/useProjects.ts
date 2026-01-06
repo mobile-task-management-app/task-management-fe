@@ -1,24 +1,18 @@
 import { projectApi } from "@/api/client";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { Alert } from "react-native";
 import { AddProjectRequestDTO } from "../api/generated"; // Import SignIn DTO
 
-export const useCreateProject = () => {
+export const useCreateProject = (
+  onSuccess: (response: any, variables: AddProjectRequestDTO) => void,
+  onError: (error: any) => void
+) => {
   const router = useRouter();
   return useMutation({
     mutationFn: (data: AddProjectRequestDTO) =>
       projectApi.projectControllerAddProject(data),
-    onSuccess: (response, variables) => {
-      router.push({
-        pathname: "/(tabs)",
-      });
-    },
-    onError: (error: any) => {
-      const errorMessage =
-        error.response?.data?.message || "Something went wrong";
-      Alert.alert("Sign Up Failed", errorMessage);
-    },
+    onSuccess: onSuccess,
+    onError: onError,
   });
 };
 export const useGetUserProjectSummaries = () => {
@@ -35,5 +29,20 @@ export const useGetUserProjectSummaries = () => {
     },
     retry: 1,
     staleTime: 1000 * 60 * 5, // Consider data "fresh" for 5 minutes
+  });
+};
+
+export const useGetProjectDetail = (projectId: string) => {
+  return useQuery({
+    queryKey: ["project-detail", projectId],
+    queryFn: async () => {
+      const response = await projectApi.projectControllerGetProjectById(
+        Number(projectId)
+      );
+      return response.data;
+    },
+    enabled: !!projectId,
+    retry: 1,
+    staleTime: 1000 * 60 * 5,
   });
 };

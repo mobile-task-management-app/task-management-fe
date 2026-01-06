@@ -7,7 +7,7 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **success** | **boolean** |  | [default to undefined]
 **message** | **string** |  | [default to undefined]
-**data** | **object** |  | [default to undefined]
+**data** | [**TaskAttachmentsUploadResponseDTO**](TaskAttachmentsUploadResponseDTO.md) |  | [default to undefined]
 
 ## Example
 
