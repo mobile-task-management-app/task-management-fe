@@ -16,20 +16,21 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { AppButton } from "../../components/common/AppButton";
 import { AppInput } from "../../components/common/AppInput";
 // import { useCreateProject } from "../../hooks/useProjects";
+import { useCreateProject } from "@/hooks/useProjects";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
 
 export const CreateProjectScreen: React.FC = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [startDate, setStartDate] = useState(new Date());
-  const [endDate, setEndDate] = useState(new Date());
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
 
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
 
   // Hook for API call
-  // const { mutate, isPending } = useCreateProject();
+  const { mutate, isPending } = useCreateProject();
 
   const onStartChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
     if (Platform.OS === "android") setShowStartPicker(false);
@@ -42,13 +43,20 @@ export const CreateProjectScreen: React.FC = () => {
   };
 
   const handleSave = () => {
-    // mutate({
-    //   title,
-    //   description,
-    //   // Convert to Unix Timestamp (seconds)
-    //   start_date: Math.floor(startDate.getTime() / 1000),
-    //   end_date: Math.floor(endDate.getTime() / 1000),
-    // });
+    const formattedStartDate = startDate
+      ? Math.floor(startDate.getTime() / 1000)
+      : undefined;
+
+    const formattedEndDate = endDate
+      ? Math.floor(endDate.getTime() / 1000)
+      : undefined;
+
+    mutate({
+      name: title,
+      description,
+      start_date: formattedStartDate,
+      end_date: formattedEndDate,
+    });
   };
 
   // Helper to render the iOS specific picker container
@@ -102,7 +110,7 @@ export const CreateProjectScreen: React.FC = () => {
         <View pointerEvents="none">
           <AppInput
             label="Start Date"
-            value={startDate.toLocaleDateString()}
+            value={startDate?.toLocaleDateString()}
             placeholder="Select Start Date"
             right={
               <Ionicons
@@ -119,7 +127,7 @@ export const CreateProjectScreen: React.FC = () => {
         <View pointerEvents="none">
           <AppInput
             label="End Date"
-            value={endDate.toLocaleDateString()}
+            value={endDate?.toLocaleDateString()}
             placeholder="Select End Date"
             right={
               <Ionicons
@@ -135,14 +143,14 @@ export const CreateProjectScreen: React.FC = () => {
       {/* Android Pickers */}
       {Platform.OS === "android" && showStartPicker && (
         <DateTimePicker
-          value={startDate}
+          value={endDate || new Date()}
           mode="date"
           onChange={onStartChange}
         />
       )}
       {Platform.OS === "android" && showEndPicker && (
         <DateTimePicker
-          value={endDate}
+          value={startDate || new Date()}
           mode="date"
           minimumDate={startDate}
           onChange={onEndChange}
@@ -154,14 +162,14 @@ export const CreateProjectScreen: React.FC = () => {
         renderIOSPicker(
           showStartPicker,
           setShowStartPicker,
-          startDate,
+          startDate || new Date(),
           onStartChange
         )}
       {Platform.OS === "ios" &&
         renderIOSPicker(
           showEndPicker,
           setShowEndPicker,
-          endDate,
+          endDate || new Date(),
           onEndChange,
           startDate
         )}

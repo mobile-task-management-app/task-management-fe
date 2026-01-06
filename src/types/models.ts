@@ -13,15 +13,15 @@ export type Task = {
   color: string;
 };
 
-export type ProjectStatus = "Overdue" | "In Progress" | "Done";
+export type ProjectStatus = "Not Yet" | "In Progress" | "Done";
 
 export type Project = {
-  id: string;
+  id: number;
   title: string;
   tasksCount: number;
   progress: number;
   status: ProjectStatus;
-  startDate: string;
-  endDate: string;
+  startDate?: string;
+  endDate?: string;
   accentColor: string;
 };

@@ -7,6 +7,7 @@ All URIs are relative to *http://localhost*
 |[**projectControllerAddProject**](#projectcontrolleraddproject) | **POST** /api/v1/projects | Create a new project|
 |[**projectControllerDeleteProject**](#projectcontrollerdeleteproject) | **DELETE** /api/v1/projects/{id} | Delete a project|
 |[**projectControllerGetProjectById**](#projectcontrollergetprojectbyid) | **GET** /api/v1/projects/{id} | Get project details by ID|
+|[**projectControllerGetUserProjectSummaries**](#projectcontrollergetuserprojectsummaries) | **GET** /api/v1/projects/summaries | Get project summaries for a user|
 |[**projectControllerSearchProject**](#projectcontrollersearchproject) | **GET** /api/v1/projects | Search and filter projects|
 |[**projectControllerUpdateProject**](#projectcontrollerupdateproject) | **PATCH** /api/v1/projects/{id} | Update an existing project|
 
@@ -143,6 +144,49 @@ const { status, data } = await apiInstance.projectControllerGetProjectById(
 ### Return type
 
 **ProjectControllerAddProject200Response**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** |  |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **projectControllerGetUserProjectSummaries**
+> ProjectControllerGetUserProjectSummaries200Response projectControllerGetUserProjectSummaries()
+
+
+### Example
+
+```typescript
+import {
+    ProjectsApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new ProjectsApi(configuration);
+
+const { status, data } = await apiInstance.projectControllerGetUserProjectSummaries();
+```
+
+### Parameters
+This endpoint does not have any parameters.
+
+
+### Return type
+
+**ProjectControllerGetUserProjectSummaries200Response**
 
 ### Authorization
 

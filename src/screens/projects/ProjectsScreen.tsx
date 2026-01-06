@@ -1,24 +1,57 @@
-import React, { useState } from "react";
-import { FlatList, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useGetUserProjectSummaries } from "@/hooks/useProjects";
 import { Ionicons } from "@expo/vector-icons";
+import React, { useState } from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { AppInput } from "../../components/common/AppInput";
 import { Badge } from "../../components/common/Badge";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
-import { mockProjects } from "../../data/mock";
 import { Project } from "../../types/models";
-import { formatPercent } from "../../utils/format";
 
 export const ProjectsScreen: React.FC = () => {
   const [query, setQuery] = useState("");
+  const { data, isLoading, isError } = useGetUserProjectSummaries();
+  // 1. Handle Loading State
+  if (isLoading) {
+    return <ActivityIndicator size="large" />;
+  }
+
+  if (isError || !data) {
+    return <Text>Could not load projects</Text>;
+  }
+  const projects: Project[] =
+    data?.data.project_summaries.map((project): Project => {
+      return {
+        id: project.id,
+        title: project.name,
+        tasksCount: project.total_tasks,
+        progress:
+          Number(project.number_of_done_tasks / project.total_tasks) || 0,
+        status: project.status as Project["status"],
+        startDate: project.start_date
+          ? new Date(project.start_date * 1000).toLocaleDateString()
+          : "N/A",
+
+        endDate: project.end_date
+          ? new Date(project.end_date * 1000).toLocaleDateString()
+          : "N/A",
+        accentColor: "#FF5733",
+      };
+    }) || [];
 
   return (
     <SafeAreaView style={styles.container}>
       <FlatList
         contentContainerStyle={styles.content}
-        data={mockProjects}
-        keyExtractor={(item) => item.id}
+        data={projects}
+        keyExtractor={(item) => item.id.toString()}
         ListHeaderComponent={
           <>
             <Text style={styles.title}>My projects</Text>
@@ -26,7 +59,9 @@ export const ProjectsScreen: React.FC = () => {
               placeholder="Search"
               value={query}
               onChangeText={setQuery}
-              right={<Ionicons name="search" size={16} color={colors.textMuted} />}
+              right={
+                <Ionicons name="search" size={16} color={colors.textMuted} />
+              }
             />
           </>
         }
@@ -38,7 +73,8 @@ export const ProjectsScreen: React.FC = () => {
 };
 
 const ProjectRow: React.FC<{ project: Project }> = ({ project }) => {
-  const progressWidth = `${Math.round(project.progress * 100)}%` as `${number}%`;
+  const progressWidth =
+    `${Math.round(project.progress * 100)}%` as `${number}%`;
 
   return (
     <View style={styles.card}>
@@ -53,12 +89,7 @@ const ProjectRow: React.FC<{ project: Project }> = ({ project }) => {
       </View>
       <View style={styles.progressRow}>
         <View style={styles.progressBar}>
-          <View
-            style={[
-              styles.progressFill,
-              { width: progressWidth },
-            ]}
-          />
+          <View style={[styles.progressFill, { width: progressWidth }]} />
         </View>
         <View style={styles.progressPill}>
           <Text style={styles.progressPillText}>
