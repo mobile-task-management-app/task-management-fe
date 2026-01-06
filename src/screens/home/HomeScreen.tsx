@@ -3,7 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 import { AppButton } from "@/components/common/AppButton";
 import { signIn } from "@/state/authSlice";
-import { useAppDispatch } from "@/state/hooks";
+import { useAppDispatch, useAppSelector } from "@/state/hooks";
 import { BlurView } from "expo-blur";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
@@ -24,13 +24,13 @@ import {
 import { Card } from "../../components/common/Card";
 import { ProgressRingPlaceholder } from "../../components/common/ProgressRingPlaceholder";
 import { SectionHeader } from "../../components/common/SectionHeader";
-import { mockProjects } from "../../data/mock";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
 import { Project } from "../../types/models";
 
 export const HomeScreen: React.FC = () => {
   const { data, isLoading, isError } = useProfile();
+  const projects = useAppSelector((state) => state.projects.projects);
 
   // 1. Handle Loading State
   if (isLoading) {
@@ -72,7 +72,7 @@ export const HomeScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <FlatList
         contentContainerStyle={styles.content}
-        data={mockProjects}
+        data={projects}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={
           <>
@@ -109,7 +109,7 @@ export const HomeScreen: React.FC = () => {
                 </View>
               </View>
             </Card>
-            <SectionHeader title="Projects" count={mockProjects.length} />
+            <SectionHeader title="Projects" count={projects.length} />
           </>
         }
         renderItem={({ item }) => <ProjectCard project={item} />}
