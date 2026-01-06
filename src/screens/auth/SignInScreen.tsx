@@ -11,9 +11,10 @@ import { typography } from "../../theme/typography";
 
 interface Props {
   onSuccess?: () => void;
+  onForgotPassword?: () => void;
 }
 
-export const SignInScreen: React.FC<Props> = ({ onSuccess }) => {
+export const SignInScreen: React.FC<Props> = ({ onSuccess, onForgotPassword }) => {
   const dispatch = useAppDispatch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -82,7 +83,7 @@ export const SignInScreen: React.FC<Props> = ({ onSuccess }) => {
           <Text style={styles.rememberText}>Remember Me</Text>
         </Pressable>
 
-        <Text style={styles.link}>Forgot Password</Text>
+        <Text style={styles.link } onPress={onForgotPassword}>Forgot Password</Text>
       </View>
 
       <AppButton title="Sign In" onPress={handleSignIn} />

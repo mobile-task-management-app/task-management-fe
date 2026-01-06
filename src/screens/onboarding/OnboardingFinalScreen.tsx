@@ -5,14 +5,17 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
   Image,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
   View,
   useWindowDimensions,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppButton } from "../../components/common/AppButton";
+import { ForgotPasswordSheet } from "../auth/ForgotPasswordSheet";
 import { SignInScreen } from "../auth/SignInScreen";
 
 /* ================= CONSTANTS ================= */
@@ -30,24 +33,40 @@ const LAYOUT_RATIOS = {
   TASK_CARD_RIGHT: 0.1,
 } as const;
 
+type SheetType = "none" | "signin" | "forgot";
+
 /* ================= COMPONENT ================= */
 
 export const OnboardingFinalScreen: React.FC = () => {
   const { width, height } = useWindowDimensions();
-  const [showSignIn, setShowSignIn] = useState(false);
+  const insets = useSafeAreaInsets();
 
-  /* ===== Animation ===== */
-  const translateY = useRef(new Animated.Value(height)).current;
+  const [activeSheet, setActiveSheet] = useState<SheetType>("none");
+  const [showForgot, setShowForgot] = useState(false);
+
+  /* ===== Animations ===== */
+  const signInY = useRef(new Animated.Value(height)).current;
+  const forgotY = useRef(new Animated.Value(height)).current;
+
+  const SHEET_TOP = height * 0.25;
 
   useEffect(() => {
-    Animated.timing(translateY, {
-      toValue: showSignIn ? height * 0.25 : height,
+    Animated.timing(signInY, {
+      toValue: activeSheet === "signin" ? SHEET_TOP : height,
       duration: 350,
       useNativeDriver: true,
     }).start();
-  }, [showSignIn, height]);
+  }, [activeSheet, height]);
 
-  /* ===== Layout values ===== */
+  useEffect(() => {
+    Animated.timing(forgotY, {
+      toValue: activeSheet === "forgot" ? SHEET_TOP : height,
+      duration: 350,
+      useNativeDriver: true,
+    }).start();
+  }, [activeSheet, height]);
+
+  /* ===== Layout ===== */
   const layout = useMemo(
     () => ({
       cardAreaHeight: height * LAYOUT_RATIOS.CARD_AREA_HEIGHT,
@@ -62,15 +81,14 @@ export const OnboardingFinalScreen: React.FC = () => {
     [width, height]
   );
 
-  const styles = useMemo(() => createStyles(layout), [layout]);
+  const styles = useMemo(() => createStyles(layout, insets), [layout, insets]);
+
+  const closeSheet = () => setActiveSheet("none");
 
   return (
     <View style={{ flex: 1 }}>
-      {/* ===== Background ===== */}
-      <LinearGradient
-        colors={GRADIENT_COLORS}
-        style={StyleSheet.absoluteFill}
-      />
+      {/* ===== BACKGROUND ===== */}
+      <LinearGradient colors={GRADIENT_COLORS} style={StyleSheet.absoluteFill} />
 
       {/* ===== MAIN CONTENT ===== */}
       <View style={styles.container}>
@@ -101,7 +119,7 @@ export const OnboardingFinalScreen: React.FC = () => {
             </Text>
 
             <View style={styles.buttonGroup}>
-              <AppButton title="Sign In" onPress={() => setShowSignIn(true)} />
+              <AppButton title="Sign In" onPress={() => setActiveSheet("signin")} />
               <AppButton
                 title="Sign Up"
                 variant="outline"
@@ -112,32 +130,38 @@ export const OnboardingFinalScreen: React.FC = () => {
         </SafeAreaView>
       </View>
 
-      {/* ===== BLUR OVERLAY ===== */}
-      {showSignIn && (
-        <Pressable
-          style={[StyleSheet.absoluteFill, { zIndex: 40 }]}
-          onPress={() => setShowSignIn(false)}
-        >
-          <BlurView
-            intensity={40}
-            tint="dark"
-            style={[StyleSheet.absoluteFill, { zIndex: 50 }]}
-          />
+      {/* ===== BLUR ===== */}
+      {activeSheet !== "none" && (
+        <Pressable style={StyleSheet.absoluteFill} onPress={closeSheet}>
+          <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
         </Pressable>
       )}
 
-      {/* ===== SIGN IN BOTTOM SHEET ===== */}
+      {/* ===== SIGN IN SHEET ===== */}
       <Animated.View
-        style={[
-          styles.sheet,
-          { 
-            transform: [{ translateY }],
-            zIndex: 100,
-          },
-        ]}
+        style={[styles.sheet, { transform: [{ translateY: signInY }] }]}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={{ flex: 1 }}
+        >
+          <View style={styles.sheetHandle} />
+          <SignInScreen
+            onSuccess={closeSheet}
+            onForgotPassword={() => setActiveSheet("forgot")}
+          />
+        </KeyboardAvoidingView>
+      </Animated.View>
+
+      {/* ===== FORGOT PASSWORD SHEET ===== */}
+      <Animated.View
+        style={[styles.sheet, { transform: [{ translateY: forgotY }] }]}
       >
         <View style={styles.sheetHandle} />
-        <SignInScreen onSuccess={() => setShowSignIn(false)} />
+        <ForgotPasswordSheet onDone={() => {
+          setShowForgot(false);
+          setActiveSheet("signin");
+        }} />
       </Animated.View>
     </View>
   );
@@ -145,20 +169,12 @@ export const OnboardingFinalScreen: React.FC = () => {
 
 /* ================= STYLES ================= */
 
-const createStyles = (layout: {
-  cardAreaHeight: number;
-  cardOverlap: number;
-  achievementWidth: number;
-  achievementHeight: number;
-  achievementLeft: number;
-  taskWidth: number;
-  taskHeight: number;
-  taskRight: number;
-}) =>
+const createStyles = (
+  layout: any,
+  insets: { bottom: number }
+) =>
   StyleSheet.create({
-    container: {
-      flex: 1,
-    },
+    container: { flex: 1 },
 
     illustrationContainer: {
       flex: 1,
@@ -179,7 +195,6 @@ const createStyles = (layout: {
       position: "absolute",
       top: -12,
       left: layout.achievementLeft,
-      zIndex: 1,
     },
 
     taskCard: {
@@ -187,11 +202,10 @@ const createStyles = (layout: {
       height: layout.taskHeight,
       marginTop: layout.cardOverlap,
       marginRight: layout.taskRight,
-      zIndex: 2,
     },
 
     contentWrapper: {
-      backgroundColor: "#FFFFFF",
+      backgroundColor: "#FFF",
       borderTopLeftRadius: 32,
       borderTopRightRadius: 32,
     },
@@ -206,16 +220,14 @@ const createStyles = (layout: {
     title: {
       fontSize: 28,
       fontWeight: "700",
-      color: "#111827",
-      marginBottom: 12,
       textAlign: "center",
+      marginBottom: 12,
     },
 
     subtitle: {
       fontSize: 15,
       color: "#6B7280",
       textAlign: "center",
-      lineHeight: 22,
       marginBottom: 24,
     },
 
@@ -224,18 +236,18 @@ const createStyles = (layout: {
       gap: 12,
     },
 
-    /* ===== Bottom Sheet ===== */
     sheet: {
       position: "absolute",
       left: 0,
       right: 0,
+      bottom: 0,
       height: "75%",
-      backgroundColor: "#FFFFFF",
+      backgroundColor: "#FFF",
       borderTopLeftRadius: 32,
       borderTopRightRadius: 32,
-      padding: 24,
+      paddingHorizontal: 24,
+      paddingBottom: insets.bottom + 16,
       elevation: 30,
-      zIndex: 100,
     },
 
     sheetHandle: {
@@ -244,6 +256,6 @@ const createStyles = (layout: {
       borderRadius: 3,
       backgroundColor: "#D1D5DB",
       alignSelf: "center",
-      marginBottom: 16,
+      marginVertical: 16,
     },
   });
