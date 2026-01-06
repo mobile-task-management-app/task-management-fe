@@ -35,7 +35,10 @@ const RootLayoutNav = () => {
   const inAuth = currentGroup === "(auth)";
   const inTabs = currentGroup === "(tabs)";
   const inCreate =
-    currentGroup === "create-task" || currentGroup === "create-project";
+    currentGroup === "create-task" ||
+    currentGroup === "create-project" ||
+    currentGroup === "edit-task" ||
+    currentGroup === "project";
 
   let redirectTo: "/(onboarding)" | "/(auth)" | "/(tabs)" | null = null;
   console.log(
@@ -85,6 +88,7 @@ const RootLayoutNav = () => {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="create-task" />
         <Stack.Screen name="create-project" />
+        <Stack.Screen name="edit-task" />
       </Stack>
     </>
   );

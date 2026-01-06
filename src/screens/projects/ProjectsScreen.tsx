@@ -1,14 +1,19 @@
 import { useGetUserProjectSummaries } from "@/hooks/useProjects";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useState } from "react";
+import { useRouter } from "expo-router";
+import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  Pressable,
   StyleSheet,
   Text,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { AppInput } from "../../components/common/AppInput";
 import { Badge } from "../../components/common/Badge";
 import { colors } from "../../theme/colors";
@@ -16,6 +21,8 @@ import { spacing } from "../../theme/spacing";
 import { Project } from "../../types/models";
 
 export const ProjectsScreen: React.FC = () => {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [query, setQuery] = useState("");
   const { data, isLoading, isError } = useGetUserProjectSummaries();
   // 1. Handle Loading State
@@ -46,38 +53,65 @@ export const ProjectsScreen: React.FC = () => {
       };
     }) || [];
 
+  const filteredProjects = useMemo(() => {
+    const normalized = query.trim().toLowerCase();
+    if (!normalized) return projects;
+    return projects.filter((project) =>
+      project.title.toLowerCase().includes(normalized)
+    );
+  }, [projects, query]);
+
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["left", "right", "bottom"]}>
       <FlatList
         contentContainerStyle={styles.content}
-        data={projects}
+        data={filteredProjects}
         keyExtractor={(item) => item.id.toString()}
         ListHeaderComponent={
-          <>
-            <Text style={styles.title}>My projects</Text>
-            <AppInput
-              placeholder="Search"
-              value={query}
-              onChangeText={setQuery}
-              right={
-                <Ionicons name="search" size={16} color={colors.textMuted} />
-              }
-            />
-          </>
+          <View
+            style={[styles.header, { paddingTop: insets.top + spacing.lg }]}
+          >
+            <View style={styles.headerTop}>
+              <Text style={styles.title}>My projects</Text>
+            </View>
+            <View style={styles.searchWrap}>
+              <AppInput
+                placeholder="Search"
+                value={query}
+                onChangeText={setQuery}
+                left={
+                  <Ionicons name="search" size={16} color={colors.textMuted} />
+                }
+              />
+            </View>
+          </View>
         }
-        renderItem={({ item }) => <ProjectRow project={item} />}
+        renderItem={({ item }) => (
+          <ProjectRow
+            project={item}
+            onPress={() =>
+              router.push({
+                pathname: "/project/[id]",
+                params: { id: item.id },
+              })
+            }
+          />
+        )}
         ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
       />
     </SafeAreaView>
   );
 };
 
-const ProjectRow: React.FC<{ project: Project }> = ({ project }) => {
+const ProjectRow: React.FC<{
+  project: Project;
+  onPress: () => void;
+}> = ({ project, onPress }) => {
   const progressWidth =
     `${Math.round(project.progress * 100)}%` as `${number}%`;
 
   return (
-    <View style={styles.card}>
+    <Pressable onPress={onPress} style={styles.card}>
       <View style={styles.rowBetween}>
         <View>
           <Text style={styles.projectTitle}>{project.title}</Text>
@@ -97,7 +131,7 @@ const ProjectRow: React.FC<{ project: Project }> = ({ project }) => {
           </Text>
         </View>
       </View>
-    </View>
+    </Pressable>
   );
 };
 
@@ -108,12 +142,46 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: spacing.xl,
+    paddingTop: 0,
+  },
+  header: {
+    backgroundColor: colors.primary,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.xl,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    marginBottom: spacing.lg,
+    marginHorizontal: -spacing.xl,
+  },
+  headerTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.lg,
+    paddingHorizontal: spacing.xl,
+  },
+  backButton: {
+    position: "absolute",
+    left: 30,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(255,255,255,0.25)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  searchWrap: {
+    // backgroundColor: colors.card,
+    // borderRadius: 16,
+    paddingHorizontal: spacing.sm,
+    paddingTop: spacing.md,
+    marginTop: spacing.md,
+    marginHorizontal: spacing.xl,
   },
   title: {
-    fontSize: 20,
+    fontSize: 26,
     fontWeight: "700",
-    color: colors.text,
-    marginBottom: spacing.lg,
+    color: "#FFFFFF",
   },
   card: {
     backgroundColor: colors.card,

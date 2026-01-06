@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker, {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   Modal,
@@ -17,10 +18,13 @@ import { AppButton } from "../../components/common/AppButton";
 import { AppInput } from "../../components/common/AppInput";
 // import { useCreateProject } from "../../hooks/useProjects";
 import { useCreateProject } from "@/hooks/useProjects";
+import { useAppDispatch } from "../../state/hooks";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
 
 export const CreateProjectScreen: React.FC = () => {
+  const router = useRouter();
+  const dispatch = useAppDispatch();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
@@ -28,13 +32,24 @@ export const CreateProjectScreen: React.FC = () => {
 
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
+  const [showRangePicker, setShowRangePicker] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   // Hook for API call
   const { mutate, isPending } = useCreateProject();
 
   const onStartChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
     if (Platform.OS === "android") setShowStartPicker(false);
-    if (selectedDate) setStartDate(selectedDate);
+    if (selectedDate) {
+      setStartDate(selectedDate);
+      if (endDate && selectedDate > endDate) {
+        setEndDate(selectedDate);
+      }
+      if (Platform.OS === "android") {
+        setShowEndPicker(true);
+      }
+    }
   };
 
   const onEndChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
@@ -42,7 +57,24 @@ export const CreateProjectScreen: React.FC = () => {
     if (selectedDate) setEndDate(selectedDate);
   };
 
+  const formatDate = (value: Date) => value.toLocaleDateString("en-GB");
+
+  const dateRangeLabel = `${formatDate(startDate || new Date())} - ${formatDate(endDate || new Date())}`;
+
+  const pickAccentColor = (seed: string) => {
+    const palette = ["#F6A6C9", "#B4A6F6", "#FFB169", "#FFD166", "#79D2DE"];
+    let hash = 0;
+    for (let i = 0; i < seed.length; i += 1) {
+      hash = (hash + seed.charCodeAt(i)) % palette.length;
+    }
+    return palette[hash];
+  };
+
   const handleSave = () => {
+    setShowConfirm(true);
+  };
+
+  const handleConfirmCreate = () => {
     const formattedStartDate = startDate
       ? Math.floor(startDate.getTime() / 1000)
       : undefined;
@@ -57,78 +89,52 @@ export const CreateProjectScreen: React.FC = () => {
       start_date: formattedStartDate,
       end_date: formattedEndDate,
     });
+
+    setShowConfirm(false);
+    setShowSuccess(true);
   };
 
-  // Helper to render the iOS specific picker container
-  const renderIOSPicker = (
-    show: boolean,
-    setShow: (v: boolean) => void,
-    date: Date,
-    onChange: any,
-    minDate?: Date
-  ) => (
-    <Modal visible={show} transparent animationType="slide">
-      <View style={styles.modalOverlay}>
-        <View style={styles.iosPickerContainer}>
-          <View style={styles.iosToolbar}>
-            <Pressable onPress={() => setShow(false)}>
-              <Text style={styles.doneText}>Done</Text>
-            </Pressable>
-          </View>
-          <DateTimePicker
-            value={date}
-            mode="date"
-            display="spinner"
-            minimumDate={minDate}
-            onChange={onChange}
-          />
-        </View>
-      </View>
-    </Modal>
-  );
+  const handleViewProjects = () => {
+    setShowSuccess(false);
+    setTitle("");
+    setDescription("");
+    router.replace("/(tabs)/projects");
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Create Project</Text>
+      <Text style={styles.title}>Create New Project</Text>
 
       <AppInput
-        label="Title"
-        placeholder="Project title"
+        label="Project Title"
+        placeholder="Enter Project Title"
         value={title}
         onChangeText={setTitle}
       />
 
       <AppInput
-        label="Description"
-        placeholder="Project description"
+        label="Project Description"
+        placeholder="Enter Project Description"
         value={description}
         onChangeText={setDescription}
         multiline
+        style={styles.descriptionInput}
       />
 
-      <Pressable onPress={() => setShowStartPicker(true)}>
+      <Pressable
+        onPress={() => {
+          if (Platform.OS === "ios") {
+            setShowRangePicker(true);
+          } else {
+            setShowStartPicker(true);
+          }
+        }}
+      >
         <View pointerEvents="none">
           <AppInput
-            label="Start Date"
-            value={startDate?.toLocaleDateString()}
-            placeholder="Select Start Date"
-            right={
-              <Ionicons
-                name="calendar-outline"
-                size={18}
-                color={colors.primary}
-              />
-            }
-          />
-        </View>
-      </Pressable>
-
-      <Pressable onPress={() => setShowEndPicker(true)}>
-        <View pointerEvents="none">
-          <AppInput
-            label="End Date"
-            value={endDate?.toLocaleDateString()}
-            placeholder="Select End Date"
+            label="Due date"
+            value={dateRangeLabel}
+            placeholder="Select Due date"
             right={
               <Ionicons
                 name="calendar-outline"
@@ -157,30 +163,90 @@ export const CreateProjectScreen: React.FC = () => {
         />
       )}
 
-      {/* iOS Pickers (Wrapped in Modals) */}
-      {Platform.OS === "ios" &&
-        renderIOSPicker(
-          showStartPicker,
-          setShowStartPicker,
-          startDate || new Date(),
-          onStartChange
-        )}
-      {Platform.OS === "ios" &&
-        renderIOSPicker(
-          showEndPicker,
-          setShowEndPicker,
-          endDate || new Date(),
-          onEndChange,
-          startDate
-        )}
-
       <View style={styles.spacer} />
       <AppButton
-        title="Save Project"
+        title="Create Project"
         onPress={handleSave}
         // loading={isPending}
         // disabled={!title}
       />
+
+      <Modal visible={showRangePicker} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.iosPickerContainer}>
+            <View style={styles.iosToolbar}>
+              <Pressable onPress={() => setShowRangePicker(false)}>
+                <Text style={styles.doneText}>Done</Text>
+              </Pressable>
+            </View>
+            <View style={styles.rangePickerBlock}>
+              <Text style={styles.rangeLabel}>Start date</Text>
+              <DateTimePicker
+                value={startDate || new Date()}
+                mode="date"
+                display="spinner"
+                onChange={onStartChange}
+              />
+            </View>
+            <View style={styles.rangePickerBlock}>
+              <Text style={styles.rangeLabel}>End date</Text>
+              <DateTimePicker
+                value={endDate || new Date()}
+                mode="date"
+                display="spinner"
+                minimumDate={startDate}
+                onChange={onEndChange}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={showConfirm} transparent animationType="fade">
+        <Pressable
+          style={styles.backdrop}
+          onPress={() => setShowConfirm(false)}
+        >
+          <Pressable style={styles.sheet} onPress={() => null}>
+            <View style={styles.sheetIcon}>
+              <Ionicons name="calendar" size={26} color="#FFFFFF" />
+            </View>
+            <Text style={styles.sheetTitle}>Create New Project</Text>
+            <Text style={styles.sheetSubtitle}>
+              Double-check your project details to ensure everything is correct.
+              Do you want to proceed?
+            </Text>
+            <AppButton title="Yes, Proceed Now" onPress={handleConfirmCreate} />
+            <AppButton
+              title="No, Let me check"
+              variant="outline"
+              onPress={() => setShowConfirm(false)}
+            />
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      <Modal visible={showSuccess} transparent animationType="fade">
+        <Pressable
+          style={styles.backdrop}
+          onPress={() => setShowSuccess(false)}
+        >
+          <Pressable style={styles.sheet} onPress={() => null}>
+            <View style={styles.sheetIcon}>
+              <Ionicons name="checkmark" size={26} color="#FFFFFF" />
+            </View>
+            <Text style={styles.sheetTitle}>Project Has Been Created!</Text>
+            <Text style={styles.sheetSubtitle}>
+              Congratulations! Project has been created! View your project in
+              the projects management.
+            </Text>
+            <AppButton
+              title="View Projects Management"
+              onPress={handleViewProjects}
+            />
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -196,6 +262,10 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: colors.text,
     marginBottom: spacing.lg,
+  },
+  descriptionInput: {
+    minHeight: 110,
+    textAlignVertical: "top",
   },
   spacer: {
     flex: 1,
@@ -226,5 +296,48 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: "600",
     fontSize: 16,
+  },
+  rangePickerBlock: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+  },
+  rangeLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: colors.textMuted,
+    marginBottom: spacing.sm,
+  },
+  backdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.35)",
+    justifyContent: "flex-end",
+    padding: spacing.lg,
+  },
+  sheet: {
+    backgroundColor: colors.card,
+    borderRadius: 24,
+    padding: spacing.xl,
+    gap: spacing.md,
+  },
+  sheetIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "center",
+  },
+  sheetTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.text,
+    textAlign: "center",
+  },
+  sheetSubtitle: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: colors.textMuted,
+    textAlign: "center",
   },
 });
