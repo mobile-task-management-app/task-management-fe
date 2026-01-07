@@ -164,7 +164,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **taskControllerUpdateTask**
-> TaskControllerGetTaskById200Response taskControllerUpdateTask(body)
+> TaskControllerGetTaskById200Response taskControllerUpdateTask(updateTaskRequestDTO)
 
 
 ### Example
@@ -172,18 +172,19 @@ No authorization required
 ```typescript
 import {
     TasksApi,
-    Configuration
+    Configuration,
+    UpdateTaskRequestDTO
 } from './api';
 
 const configuration = new Configuration();
 const apiInstance = new TasksApi(configuration);
 
 let id: number; //The unique ID of the task (default to undefined)
-let body: object; //
+let updateTaskRequestDTO: UpdateTaskRequestDTO; //
 
 const { status, data } = await apiInstance.taskControllerUpdateTask(
     id,
-    body
+    updateTaskRequestDTO
 );
 ```
 
@@ -191,7 +192,7 @@ const { status, data } = await apiInstance.taskControllerUpdateTask(
 
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
-| **body** | **object**|  | |
+| **updateTaskRequestDTO** | **UpdateTaskRequestDTO**|  | |
 | **id** | [**number**] | The unique ID of the task | defaults to undefined|
 
 

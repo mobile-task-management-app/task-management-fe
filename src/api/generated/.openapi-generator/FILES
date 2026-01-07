@@ -35,6 +35,7 @@ docs/TaskStatus.md
 docs/TasksApi.md
 docs/TokenResponseDTO.md
 docs/UpdateProjectRequestDTO.md
+docs/UpdateTaskRequestDTO.md
 docs/UserControllerGetProfile200Response.md
 docs/UserResponseDTO.md
 docs/UsersApi.md
