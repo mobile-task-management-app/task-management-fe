@@ -1,14 +1,13 @@
 import { AppButton } from "@/components/common/AppButton";
-import { verifyEmail } from "@/state/authSlice";
+import { useFirstTimeSignIn, useVerifyOTP } from "@/hooks/useAuth";
 import { useAppDispatch } from "@/state/hooks";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
 import React, { useRef, useState } from "react";
 import {
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
@@ -16,14 +15,22 @@ import { typography } from "../../theme/typography";
 
 interface Props {
   onSuccess?: () => void;
+  email?: string;
+  password?: string;
 }
 
-export const EmailVerificationSheet: React.FC<Props> = ({ onSuccess }) => {
+
+export const EmailVerificationSheet: React.FC<Props> = ({ onSuccess, email, password }) => {
   const dispatch = useAppDispatch();
   const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
   const inputs = useRef<TextInput[]>([]);
+  const { mutate, isPending } = useVerifyOTP();
+  const { mutate: firstLogin } = useFirstTimeSignIn();
+  const isOtpValid = otp.every((v) => v !== "");
 
   const handleChange = (value: string, index: number) => {
+    if (!/^\d?$/.test(value)) return;
+
     const next = [...otp];
     next[index] = value;
     setOtp(next);
@@ -31,17 +38,25 @@ export const EmailVerificationSheet: React.FC<Props> = ({ onSuccess }) => {
     if (value && index < 5) {
       inputs.current[index + 1]?.focus();
     }
+
+    if (!value && index > 0) {
+      inputs.current[index - 1]?.focus();
+    }
   };
 
   const handleSubmit = () => {
-    dispatch(verifyEmail());
+    if (!isOtpValid || isPending) return;
 
-    onSuccess?.();
-
-    router.replace({
-      pathname: "/(tabs)",
-      params: { welcome: "1" },
-    });
+    mutate(
+      { otp: otp.join("") },
+      {
+        onSuccess: () => {
+          if (email && password) {
+          firstLogin({ email, password }); 
+        }
+        }
+      }
+    );
   };
 
   return (
@@ -81,7 +96,11 @@ export const EmailVerificationSheet: React.FC<Props> = ({ onSuccess }) => {
         <Text style={styles.link}>Resend it.</Text>
       </Text>
 
-      <AppButton title="Submit" onPress={handleSubmit} />
+      <AppButton
+        title={isPending ? "Verifying..." : "Submit"}
+        disabled={!isOtpValid || isPending}
+        onPress={handleSubmit}
+      />
     </View>
   );
 };
