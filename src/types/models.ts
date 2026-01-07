@@ -13,10 +13,10 @@ export type Task = {
   color: string;
 };
 
-export type ProjectStatus = "Not Yet" | "In Progress" | "Done";
+export type ProjectStatus = "NOT_YET" | "IN_PROGRESS" | "DONE";
 
-export type TaskStatus = "To do" | "In Progress" | "Done";
-export type TaskPriority = "Low" | "Medium" | "High";
+export type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE" | "CANCELLED";
+export type TaskPriority = "LOW" | "MEDIUM" | "HIGH";
 
 export type ProjectTask = {
   id: string;

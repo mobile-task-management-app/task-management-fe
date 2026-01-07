@@ -212,7 +212,10 @@ export const HomeScreen: React.FC = () => {
 
 const ProjectCard: React.FC<{ project: Project }> = ({ project }) => {
   return (
-    <View style={styles.projectCard}>
+    <Pressable
+      style={styles.projectCard}
+      onPress={() => router.push(`/project/${project.id}`)}
+    >
       <View
         style={[styles.projectIcon, { backgroundColor: project.accentColor }]}
       >
@@ -227,7 +230,7 @@ const ProjectCard: React.FC<{ project: Project }> = ({ project }) => {
         size={46}
         color={project.accentColor}
       />
-    </View>
+    </Pressable>
   );
 };
 

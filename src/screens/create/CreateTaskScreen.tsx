@@ -1,10 +1,23 @@
+import {
+  CreateProjectTaskRequestDTO,
+  TaskPriority,
+  UpdateTaskRequestDTO,
+} from "@/api/generated";
+import {
+  useCreateProjectTask,
+  useTaskDetail,
+  useUpdateTask,
+} from "@/hooks/useTasks";
+import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker, {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
-import { Ionicons } from "@expo/vector-icons";
+import { useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+import * as ImageManipulator from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   Image,
@@ -22,14 +35,13 @@ import { AppButton } from "../../components/common/AppButton";
 import { AppInput } from "../../components/common/AppInput";
 import { Card } from "../../components/common/Card";
 import { getAttachmentSource } from "../../data/taskAttachments";
-import { useAppDispatch, useAppSelector } from "../../state/hooks";
-import { addTask, updateTask } from "../../state/tasksSlice";
+// import { useAppDispatch, useAppSelector } from "../../state/hooks";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
-import { ProjectTask, TaskPriority, TaskStatus } from "../../types/models";
+import { TaskStatus } from "../../types/models";
 
-const STATUS_OPTIONS: TaskStatus[] = ["To do", "In Progress", "Done"];
-const PRIORITY_OPTIONS: TaskPriority[] = ["Low", "Medium", "High"];
+const STATUS_OPTIONS: TaskStatus[] = ["TODO", "IN_PROGRESS", "DONE"];
+const PRIORITY_OPTIONS: TaskPriority[] = ["LOW", "MEDIUM", "HIGH"];
 const MAX_ATTACHMENTS = 3;
 
 const formatDate = (date: Date) => date.toISOString();
@@ -82,15 +94,17 @@ const ensurePermission = async (
 
 export const CreateTaskScreen: React.FC = () => {
   const router = useRouter();
-  const dispatch = useAppDispatch();
+  // const dispatch = useAppDispatch();
   const { projectId, taskId } = useLocalSearchParams<{
     projectId?: string;
     taskId?: string;
   }>();
-  const existingTask = useAppSelector((state) =>
-    state.tasks.tasks.find((task) => task.id === taskId)
+
+  const { data: taskData, isLoading: taskLoading } = useTaskDetail(
+    Number(taskId)
   );
-  const isEditing = Boolean(taskId && existingTask);
+  const existingTask = taskData?.data;
+  const isEditing = Boolean(taskId);
 
   const [title, setTitle] = useState(existingTask?.title ?? "");
   const [description, setDescription] = useState(
@@ -103,10 +117,10 @@ export const CreateTaskScreen: React.FC = () => {
     existingTask?.priority ?? null
   );
   const [dueDate, setDueDate] = useState<string | null>(
-    existingTask?.dueDate ?? null
+    existingTask?.end_date ?? null
   );
   const [attachments, setAttachments] = useState<string[]>(
-    existingTask?.attachments ?? []
+    existingTask?.attachments.map((key) => key.download_url ?? "") ?? []
   );
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showStatusPicker, setShowStatusPicker] = useState(false);
@@ -115,13 +129,33 @@ export const CreateTaskScreen: React.FC = () => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const canAddMore = attachments.length < MAX_ATTACHMENTS;
+  useEffect(() => {
+    if (existingTask) {
+      setTitle(existingTask.title ?? "");
+      setDescription(existingTask.description ?? "");
+      setStatus(existingTask.status ?? null);
+      setPriority(existingTask.priority ?? null);
+      setDueDate(existingTask.end_date ?? null);
+      setAttachments(
+        existingTask.attachments.map((key) => key.download_url ?? "") ?? []
+      );
+    }
+  }, [existingTask]);
+
+  const { mutate, isPending } = useCreateProjectTask(Number(projectId));
+  const { mutate: updateMutate, isPending: updatePending } = useUpdateTask(
+    Number(taskId)
+  );
+  const queryClient = useQueryClient();
 
   const handleBack = () => {
     if (isEditing && taskId) {
       router.replace({
         pathname: "/project/task/[id]",
-        params: { id: taskId, projectId: projectId ?? existingTask?.projectId },
+        params: {
+          id: taskId,
+          projectId: projectId ?? existingTask?.project_id,
+        },
       });
       return;
     }
@@ -162,7 +196,12 @@ export const CreateTaskScreen: React.FC = () => {
       quality: 0.8,
     });
     if (!result.canceled && result.assets?.[0]?.uri) {
-      addAttachment(result.assets[0].uri);
+      const manipulatedImage = await ImageManipulator.manipulateAsync(
+        result.assets[0].uri,
+        [],
+        { format: ImageManipulator.SaveFormat.JPEG }
+      );
+      addAttachment(manipulatedImage.uri);
     }
     setShowAttachmentPicker(false);
   };
@@ -174,7 +213,12 @@ export const CreateTaskScreen: React.FC = () => {
       quality: 0.8,
     });
     if (!result.canceled && result.assets?.[0]?.uri) {
-      addAttachment(result.assets[0].uri);
+      const manipulatedImage = await ImageManipulator.manipulateAsync(
+        result.assets[0].uri,
+        [],
+        { format: ImageManipulator.SaveFormat.JPEG }
+      );
+      addAttachment(manipulatedImage.uri);
     }
     setShowAttachmentPicker(false);
   };
@@ -184,27 +228,78 @@ export const CreateTaskScreen: React.FC = () => {
   };
 
   const handleConfirmCreate = () => {
-    const now = new Date();
-    const taskBase: ProjectTask = {
-      id: existingTask?.id ?? `task-${Date.now()}`,
-      projectId: existingTask?.projectId ?? projectId ?? "unknown-project",
-      title: title.trim() || "Untitled Task",
-      description: description.trim() || undefined,
-      status: status ?? "To do",
-      priority: priority ?? "Low",
-      dueDate: dueDate ?? undefined,
-      attachments,
-      createdAt: existingTask?.createdAt ?? formatDate(now),
-    };
-
     if (isEditing) {
-      dispatch(updateTask(taskBase));
+      const data: UpdateTaskRequestDTO = {
+        title: title.trim() || "Untitled Task",
+        description: description.trim() || undefined,
+        priority: priority || "LOW",
+        status: status || "TODO",
+        end_date: dueDate
+          ? Math.floor(new Date(dueDate).getTime() / 1000)
+          : undefined,
+      };
+      updateMutate(data, {
+        onSuccess: () => {
+          // Invalidate task detail and project tasks queries
+          queryClient.invalidateQueries({
+            queryKey: ["task-detail", Number(taskId)],
+          });
+          setShowConfirm(false);
+          setShowSuccess(true);
+        },
+        onError: (error) => {
+          console.error("Update task failed:", error);
+          Alert.alert("Error", "Failed to update task");
+        },
+      });
     } else {
-      dispatch(addTask(taskBase));
-    }
+      const data: CreateProjectTaskRequestDTO = {
+        title: title.trim() || "Untitled Task",
+        description: description.trim() || undefined,
+        priority: priority || "LOW",
+        status: status || "TODO",
+        category_ids: [],
+        end_date: dueDate
+          ? Math.floor(new Date(dueDate).getTime() / 1000)
+          : undefined,
+        attachments: attachments.map((uri, idx) => ({
+          name: `attachment-${idx + 1}`,
+          size: 0,
+          extension:
+            uri.includes("Camera") || uri.includes("heic")
+              ? "jpg"
+              : uri.split(".").pop() || "jpg",
+        })),
+      };
 
-    setShowConfirm(false);
-    setShowSuccess(true);
+      mutate(data, {
+        onSuccess: async (response) => {
+          // Assuming response.data.attachments is array of { upload_url: string }
+          if (response.data.attachments && attachments.length > 0) {
+            await Promise.all(
+              attachments.map(async (uri, index) => {
+                const uploadUrl = response.data.attachments[index]?.upload_url;
+                if (uploadUrl) {
+                  const res = await fetch(uri);
+                  const blob = await res.blob();
+                  await axios.put(uploadUrl, blob);
+                }
+              })
+            );
+          }
+          // Invalidate the tasks query to refetch on navigation back
+          queryClient.invalidateQueries({
+            queryKey: ["project-tasks-search", Number(projectId), {}],
+          });
+          setShowConfirm(false);
+          setShowSuccess(true);
+        },
+        onError: (error) => {
+          console.error("Create task failed:", error);
+          Alert.alert("Error", "Failed to create task");
+        },
+      });
+    }
   };
 
   const handleSuccess = () => {
@@ -213,6 +308,19 @@ export const CreateTaskScreen: React.FC = () => {
   };
 
   const dueDateLabel = dueDate ? formatDateLabel(dueDate) : "Select Due date";
+
+  if (isEditing && taskLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <Pressable style={styles.backButton} onPress={handleBack}>
+            <Ionicons name="chevron-back" size={20} color={colors.text} />
+          </Pressable>
+          <Text style={styles.title}>Loading...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -252,10 +360,10 @@ export const CreateTaskScreen: React.FC = () => {
               key={`empty-${index}`}
               style={[
                 styles.attachmentBox,
-                !canAddMore && styles.attachmentBoxDisabled,
+                // !canAddMore && styles.attachmentBoxDisabled,
               ]}
               onPress={() => {
-                if (canAddMore) setShowAttachmentPicker(true);
+                setShowAttachmentPicker(true);
               }}
             >
               <Ionicons
@@ -334,7 +442,6 @@ export const CreateTaskScreen: React.FC = () => {
         </Pressable>
       </Card>
 
-      <View style={styles.spacer} />
       <AppButton
         title={isEditing ? "Save Task" : "Create Task"}
         onPress={handleSave}
@@ -498,7 +605,10 @@ export const CreateTaskScreen: React.FC = () => {
       </Modal>
 
       <Modal visible={showConfirm} transparent animationType="fade">
-        <Pressable style={styles.backdrop} onPress={() => setShowConfirm(false)}>
+        <Pressable
+          style={styles.backdrop}
+          onPress={() => setShowConfirm(false)}
+        >
           <Pressable style={styles.sheet} onPress={() => null}>
             <View style={styles.sheetIcon}>
               <Ionicons name="calendar" size={26} color="#FFFFFF" />

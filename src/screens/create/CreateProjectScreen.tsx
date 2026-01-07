@@ -19,13 +19,13 @@ import { AppButton } from "../../components/common/AppButton";
 import { AppInput } from "../../components/common/AppInput";
 // import { useCreateProject } from "../../hooks/useProjects";
 import { useCreateProject } from "@/hooks/useProjects";
-import { useAppDispatch } from "../../state/hooks";
+import { useQueryClient } from "@tanstack/react-query";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
 
 export const CreateProjectScreen: React.FC = () => {
   const router = useRouter();
-  const dispatch = useAppDispatch();
+  const queryClient = useQueryClient();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
@@ -40,6 +40,7 @@ export const CreateProjectScreen: React.FC = () => {
   // Hook for API call
   const { mutate, isPending } = useCreateProject(
     (response, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["project-summaries"] });
       setShowConfirm(false);
       setShowSuccess(true);
     },

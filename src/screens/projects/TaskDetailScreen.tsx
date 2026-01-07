@@ -1,3 +1,5 @@
+import { Ionicons } from "@expo/vector-icons";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
   Image,
@@ -8,12 +10,10 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
 import { AppButton } from "../../components/common/AppButton";
 import { Card } from "../../components/common/Card";
 import { getAttachmentSource } from "../../data/taskAttachments";
-import { useAppSelector } from "../../state/hooks";
+import { useTaskDetail } from "../../hooks/useTasks";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
 
@@ -38,18 +38,20 @@ export const TaskDetailScreen: React.FC = () => {
     id?: string;
     projectId?: string;
   }>();
-  const task = useAppSelector((state) =>
-    state.tasks.tasks.find((item) => item.id === id)
-  );
+  const { data: taskData, isLoading } = useTaskDetail(Number(id));
+  const task = taskData?.data;
   const [activeAttachment, setActiveAttachment] = useState(0);
 
   const attachmentSources = useMemo(
-    () => task?.attachments.map((key) => resolveAttachmentSource(key)) ?? [],
+    () =>
+      task?.attachments?.map((key) =>
+        resolveAttachmentSource(key.download_url ?? "")
+      ) ?? [],
     [task?.attachments]
   );
 
   const handleBack = () => {
-    const targetProject = projectId ?? task?.projectId;
+    const targetProject = projectId ?? task?.project_id;
     if (targetProject) {
       router.replace({
         pathname: "/project/[id]",
@@ -59,6 +61,17 @@ export const TaskDetailScreen: React.FC = () => {
     }
     router.back();
   };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Pressable style={styles.backButton} onPress={handleBack}>
+          <Ionicons name="chevron-back" size={20} color={colors.text} />
+        </Pressable>
+        <Text style={styles.title}>Loading...</Text>
+      </SafeAreaView>
+    );
+  }
 
   if (!task) {
     return (
@@ -85,7 +98,7 @@ export const TaskDetailScreen: React.FC = () => {
           <View>
             <Text style={styles.taskTitle}>{task.title}</Text>
             <Text style={styles.taskMeta}>
-              Created {formatReadableDate(task.createdAt)}
+              Created {formatReadableDate(task.created_at)}
             </Text>
           </View>
           <View style={styles.statusBadge}>
@@ -138,7 +151,9 @@ export const TaskDetailScreen: React.FC = () => {
             <View style={styles.dueDateBadge}>
               <Ionicons name="calendar" size={12} color={colors.primary} />
               <Text style={styles.dueDateText}>
-                {task.dueDate ? formatReadableDate(task.dueDate) : "No due date"}
+                {task.end_date
+                  ? formatReadableDate(task.end_date)
+                  : "No due date"}
               </Text>
             </View>
           </View>
@@ -151,7 +166,7 @@ export const TaskDetailScreen: React.FC = () => {
         onPress={() =>
           router.push({
             pathname: "/edit-task",
-            params: { taskId: task.id, projectId: task.projectId },
+            params: { taskId: task.id, projectId: task.project_id },
           })
         }
       />
