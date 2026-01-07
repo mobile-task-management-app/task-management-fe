@@ -101,7 +101,7 @@ export const useFirstTimeSignIn = () => {
 
       if (token) {
         await SecureStore.setItemAsync("user_token", token);
-        dispatch(signIn());
+        // dispatch(signIn());
 
         router.replace({
             pathname: "/(tabs)",

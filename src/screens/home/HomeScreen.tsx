@@ -16,7 +16,7 @@ import {
   StyleSheet,
   Text,
   useWindowDimensions,
-  View,
+  View
 } from "react-native";
 import {
   SafeAreaView,
@@ -28,6 +28,7 @@ import { SectionHeader } from "../../components/common/SectionHeader";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
 import { Project } from "../../types/models";
+import { ProjectsEmptyCard } from "../projects/ProjectsEmptyCard";
 
 export const HomeScreen: React.FC = () => {
   // 3. Access data safely
@@ -35,6 +36,26 @@ export const HomeScreen: React.FC = () => {
   const { welcome } = useLocalSearchParams();
   const { height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+
+  // const EmptyProjects = () => {
+  //   return (
+  //     <View style={styles.emptyContainer}>
+  //       <Image
+  //         source={require("../../../assets/images/empty-project.png")}
+  //         style={styles.emptyImage}
+  //         resizeMode="contain"
+  //       />
+
+  //       <Text style={styles.emptyTitle}>No Projects Created</Text>
+
+  //       <Text style={styles.emptySubtitle}>
+  //         It looks like you don't have any projects right now. Don’t worry, this
+  //         space will be updated as new projects become available.
+  //       </Text>
+  //     </View>
+  //   );
+  // };
+
 
   const dispatch = useAppDispatch();
 
@@ -110,7 +131,10 @@ export const HomeScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <FlatList
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          styles.content,
+          // allProjects.length === 0 &&{ flexGrow: 1 },
+        ]}
         data={allProjects}
         keyExtractor={(item) => item.id.toString()}
         ListHeaderComponent={
@@ -149,8 +173,12 @@ export const HomeScreen: React.FC = () => {
               </View>
             </Card>
             <SectionHeader title="Projects" count={allProjects.length} />
+            {allProjects.length === 0 && (
+              <ProjectsEmptyCard />
+            )}
           </>
         }
+        
         renderItem={({ item }) => <ProjectCard project={item} />}
         ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
       />
@@ -190,8 +218,14 @@ export const HomeScreen: React.FC = () => {
             <View style={styles.buttonGroup}>
               <AppButton
                 title="Set Up My Profile"
+                
                 onPress={() => {
-                  router.push("/(tabs)/profile");
+                  // router.push("/(tabs)/profile");
+                  setShowWelcome(false);
+                  router.replace({
+                    pathname: "/(tabs)/profile",
+                    params: { welcome: "0" },
+                  });
                 }}
               />
               <AppButton
@@ -398,5 +432,31 @@ const styles = StyleSheet.create({
   buttonGroup: {
     width: "100%",
     gap: 12,
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.xl,
+  },
+
+  emptyImage: {
+    width: 220,
+    height: 160,
+    marginBottom: spacing.lg,
+  },
+
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.text,
+    marginBottom: spacing.sm,
+  },
+
+  emptySubtitle: {
+    fontSize: 13,
+    color: colors.textMuted,
+    textAlign: "center",
+    lineHeight: 20,
   },
 });
