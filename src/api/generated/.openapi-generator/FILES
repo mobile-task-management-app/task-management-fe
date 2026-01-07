@@ -9,6 +9,8 @@ docs/AppApi.md
 docs/AppResponseDTO.md
 docs/AuthControllerVerifyOtp200Response.md
 docs/AuthenticationApi.md
+docs/CreateProjectTaskRequestDTO.md
+docs/CreateTaskAttachmentRequestDTO.md
 docs/GetUserProjectSummariesResponseDTO.md
 docs/LogInRequestDTO.md
 docs/ProjectControllerAddProject200Response.md
@@ -27,7 +29,9 @@ docs/SignUpRequestDTO.md
 docs/TaskAttachmentResponseDTO.md
 docs/TaskAttachmentsUploadResponseDTO.md
 docs/TaskControllerGetTaskById200Response.md
+docs/TaskPriority.md
 docs/TaskResponseDTO.md
+docs/TaskStatus.md
 docs/TasksApi.md
 docs/TokenResponseDTO.md
 docs/UpdateProjectRequestDTO.md

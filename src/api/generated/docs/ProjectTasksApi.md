@@ -8,7 +8,7 @@ All URIs are relative to *http://localhost*
 |[**projectTaskControllerSearchProjectTasks**](#projecttaskcontrollersearchprojecttasks) | **GET** /api/v1/projects/{id}/tasks | Search and filter tasks within a specific project|
 
 # **projectTaskControllerCreateProjectTask**
-> ProjectTaskControllerCreateProjectTask200Response projectTaskControllerCreateProjectTask(body)
+> ProjectTaskControllerCreateProjectTask200Response projectTaskControllerCreateProjectTask(createProjectTaskRequestDTO)
 
 
 ### Example
@@ -16,18 +16,19 @@ All URIs are relative to *http://localhost*
 ```typescript
 import {
     ProjectTasksApi,
-    Configuration
+    Configuration,
+    CreateProjectTaskRequestDTO
 } from './api';
 
 const configuration = new Configuration();
 const apiInstance = new ProjectTasksApi(configuration);
 
 let id: number; //The ID of the project (default to undefined)
-let body: object; //
+let createProjectTaskRequestDTO: CreateProjectTaskRequestDTO; //
 
 const { status, data } = await apiInstance.projectTaskControllerCreateProjectTask(
     id,
-    body
+    createProjectTaskRequestDTO
 );
 ```
 
@@ -35,7 +36,7 @@ const { status, data } = await apiInstance.projectTaskControllerCreateProjectTas
 
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
-| **body** | **object**|  | |
+| **createProjectTaskRequestDTO** | **CreateProjectTaskRequestDTO**|  | |
 | **id** | [**number**] | The ID of the project | defaults to undefined|
 
 

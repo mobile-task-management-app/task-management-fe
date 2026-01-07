@@ -1,6 +1,8 @@
 import { projectTaskApi } from "@/api/client";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
+  CreateProjectTaskRequestDTO,
+  ProjectTaskControllerCreateProjectTask200Response,
   ProjectTaskControllerSearchProjectTasksPriorityEnum,
   ProjectTaskControllerSearchProjectTasksStatusEnum,
 } from "../api/generated";
@@ -38,5 +40,27 @@ export const useSearchProjectTasks = (
     enabled: !!projectId,
     retry: 1,
     staleTime: 1000 * 60 * 5,
+  });
+};
+
+export const useCreateProjectTask = (
+  projectId: number,
+  onSuccess?: (
+    response: ProjectTaskControllerCreateProjectTask200Response,
+    variables: CreateProjectTaskRequestDTO
+  ) => void,
+  onError?: (error: any) => void
+) => {
+  return useMutation({
+    mutationFn: async (data: CreateProjectTaskRequestDTO) => {
+      const response =
+        await projectTaskApi.projectTaskControllerCreateProjectTask(
+          projectId,
+          data
+        );
+      return response.data;
+    },
+    onSuccess: onSuccess,
+    onError: onError,
   });
 };
