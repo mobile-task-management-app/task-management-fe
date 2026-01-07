@@ -17,7 +17,6 @@ import {
 } from "react-native-safe-area-context";
 import { AppButton } from "../../components/common/AppButton";
 import { AppInput } from "../../components/common/AppInput";
-import { signIn } from "../../state/authSlice";
 import { useAppDispatch } from "../../state/hooks";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
@@ -38,7 +37,13 @@ export const SignUpScreen: React.FC = () => {
   const [agree, setAgree] = useState(false);
   const [isHidden, setIsHidden] = useState(true);
   const { mutate } = useSignUp();
+  const [pendingAuth, setPendingAuth] = useState<{
+    email: string;
+    password: string;
+  } | null>(null);
   const handleSignUp = () => {
+    setPendingAuth({ email, password });
+
     mutate({
       email,
       password,
@@ -47,7 +52,7 @@ export const SignUpScreen: React.FC = () => {
       first_name: firstName,
       last_name: lastName,
     });
-    dispatch(signIn());
+    // dispatch(signIn());
   };
 
   const [showVerify, setShowVerify] = useState(false);
@@ -176,7 +181,10 @@ export const SignUpScreen: React.FC = () => {
           <Text style={styles.link}>privacy policy</Text>
         </Text>
       </Pressable>
-      <AppButton title="Sign Up" onPress={handleSignUp} />
+      <AppButton title="Sign Up" onPress={() => {
+        setShowVerify(true);
+        handleSignUp();
+      }} />
       <Text style={styles.footerText}>
         Already have an account?{" "}
         <Text style={styles.link} onPress={() => setShowSignIn(true)}>
@@ -215,7 +223,10 @@ export const SignUpScreen: React.FC = () => {
         >
           <SafeAreaView edges={["bottom"]} style={styles.sheetContent}>
             <View style={styles.sheetHandle} />
-            <EmailVerificationSheet />
+            <EmailVerificationSheet
+              email={pendingAuth?.email}
+              password={pendingAuth?.password}
+            />
           </SafeAreaView>
         </Animated.View>
       )}
