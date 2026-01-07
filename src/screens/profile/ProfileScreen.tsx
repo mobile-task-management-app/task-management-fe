@@ -1,33 +1,57 @@
+import { useProfile } from "@/hooks/useUsers";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { mockUser } from "../../data/mock";
 import { signOut } from "../../state/authSlice";
-import { useAppDispatch } from "../../state/hooks";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
 
 export const ProfileScreen: React.FC = () => {
-  const dispatch = useAppDispatch();
+  const {
+    data: profileData,
+    isLoading: profileLoading,
+    isError: profileError,
+  } = useProfile();
+  if (profileError || !profileData) {
+    console.log("Error loading data:", { profileData, profileError });
+    return (
+      <View style={styles.centered}>
+        <Text>Could not load dashboard</Text>
+      </View>
+    );
+  }
+
+  const user = profileData.data;
+
+  function dispatch(arg0: { payload: undefined; type: "auth/signOut" }): void {
+    throw new Error("Function not implemented.");
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>My Profile</Text>
       <View style={styles.profileCard}>
         <View style={styles.avatar} />
-        <Text style={styles.name}>{mockUser.name}</Text>
-        <Text style={styles.email}>{mockUser.email}</Text>
+        <Text style={styles.name}>
+          {user.first_name} {user.last_name}
+        </Text>
+        <Text style={styles.email}>{user.email}</Text>
       </View>
       <Section title="CONTACT">
-        <ProfileItem icon="mail" label={mockUser.email} />
+        <ProfileItem icon="mail" label={user.email} />
         <ProfileItem icon="location" label="Taman Anggrek" />
       </Section>
       <Section title="ACCOUNT">
-        <ProfileItem  onPress={() => {
-           router.push("/update-profile")} 
-           } icon="person" label="Personal Data" showChevron />
+        <ProfileItem
+          onPress={() => {
+            router.push("/update-profile");
+          }}
+          icon="person"
+          label="Personal Data"
+          showChevron
+        />
         <ProfileItem icon="lock-closed" label="Change Password" showChevron />
       </Section>
       <Section title="SETTINGS">
@@ -93,6 +117,12 @@ const ProfileItem: React.FC<ProfileItemProps> = ({
 };
 
 const styles = StyleSheet.create({
+  centered: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: colors.background, // Match the app theme
+  },
   container: {
     flex: 1,
     backgroundColor: colors.background,
