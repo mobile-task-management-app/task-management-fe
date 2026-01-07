@@ -1,93 +1,100 @@
+import { useSignIn } from "@/hooks/useAuth";
+import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
 import { AppButton } from "../../components/common/AppButton";
 import { AppInput } from "../../components/common/AppInput";
+import { useAppDispatch } from "../../state/hooks";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
 import { typography } from "../../theme/typography";
-import { useAppDispatch } from "../../state/hooks";
-import { signIn } from "../../state/authSlice";
 
-export const SignInScreen: React.FC = () => {
+interface Props {
+  onSuccess?: () => void;
+  onForgotPassword?: () => void;
+}
+
+export const SignInScreen: React.FC<Props> = ({ onSuccess, onForgotPassword }) => {
   const dispatch = useAppDispatch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isHidden, setIsHidden] = useState(true);
   const [remember, setRemember] = useState(false);
+  const { mutate } = useSignIn();
+  const handleSignIn = () => {
+    mutate({
+      email,
+      password,
+    });
+  };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.title}>Sign In</Text>
-        <Text style={styles.subtitle}>Sign in to my account</Text>
-        <AppInput
-          label="Email"
-          placeholder="My email"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          value={email}
-          onChangeText={setEmail}
-        />
-        <AppInput
-          label="Password"
-          placeholder="My password"
-          secureTextEntry={isHidden}
-          value={password}
-          onChangeText={setPassword}
-          right={
-            <Pressable onPress={() => setIsHidden((prev) => !prev)}>
-              <Ionicons
-                name={isHidden ? "eye" : "eye-off"}
-                size={18}
-                color={colors.primary}
-              />
-            </Pressable>
-          }
-        />
-        <View style={styles.rowBetween}>
-          <Pressable style={styles.remember} onPress={() => setRemember(!remember)}>
-            <View
-              style={[
-                styles.checkbox,
-                remember && { backgroundColor: colors.primary },
-              ]}
-            >
-              {remember ? (
-                <Ionicons name="checkmark" size={14} color="#FFFFFF" />
-              ) : null}
-            </View>
-            <Text style={styles.rememberText}>Remember Me</Text>
+    <View>
+      <Text style={styles.title}>Sign In</Text>
+      <Text style={styles.subtitle}>Sign in to my account</Text>
+
+      <AppInput
+        label="Email"
+        placeholder="My email"
+        keyboardType="email-address"
+        autoCapitalize="none"
+        value={email}
+        onChangeText={setEmail}
+        left={<Ionicons name="mail-outline" size={18} color={colors.primary} />}
+      />
+
+      <AppInput
+        label="Password"
+        placeholder="My password"
+        secureTextEntry={isHidden}
+        value={password}
+        onChangeText={setPassword}
+        left={
+          <Ionicons
+            name="finger-print-outline"
+            size={18}
+            color={colors.primary}
+          />
+        }
+        right={
+          <Pressable onPress={() => setIsHidden(!isHidden)}>
+            <Ionicons
+              name={isHidden ? "eye" : "eye-off"}
+              size={18}
+              color={colors.primary}
+            />
           </Pressable>
-          <Text style={styles.link}>Forgot Password</Text>
-        </View>
-        <AppButton title="Sign In" onPress={() => dispatch(signIn())} />
-        <Text style={styles.footerText}>
-          Don&apos;t have an account? <Text style={styles.link}>Sign Up Here</Text>
-        </Text>
+        }
+      />
+
+      <View style={styles.rowBetween}>
+        <Pressable
+          style={styles.remember}
+          onPress={() => setRemember(!remember)}
+        >
+          <View
+            style={[
+              styles.checkbox,
+              remember && { backgroundColor: colors.primary },
+            ]}
+          >
+            {remember && <Ionicons name="checkmark" size={14} color="#FFF" />}
+          </View>
+          <Text style={styles.rememberText}>Remember Me</Text>
+        </Pressable>
+
+        <Text style={styles.link } onPress={onForgotPassword}>Forgot Password</Text>
       </View>
-    </SafeAreaView>
+
+      <AppButton title="Sign In" onPress={handleSignIn} />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-    justifyContent: "center",
-    padding: spacing.xl,
-  },
-  card: {
-    backgroundColor: colors.card,
-    borderRadius: 24,
-    padding: spacing.xl,
-    gap: spacing.sm,
-  },
   title: {
     ...typography.h1,
     textAlign: "center",
-    color: colors.text,
   },
   subtitle: {
     textAlign: "center",
@@ -96,7 +103,6 @@ const styles = StyleSheet.create({
   },
   rowBetween: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
     marginBottom: spacing.lg,
   },
@@ -106,8 +112,8 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   rememberText: {
-    color: colors.text,
     fontSize: 13,
+    color: colors.text,
   },
   checkbox: {
     width: 18,
@@ -120,12 +126,7 @@ const styles = StyleSheet.create({
   },
   link: {
     color: colors.primary,
-    fontSize: 13,
     fontWeight: "600",
-  },
-  footerText: {
-    textAlign: "center",
-    color: colors.textMuted,
-    marginTop: spacing.lg,
+    fontSize: 13,
   },
 });
