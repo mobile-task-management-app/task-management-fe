@@ -44,6 +44,7 @@ export const useSignIn = () => {
       // 1. Extract token from your backend response
       // Assuming your backend returns { access_token: '...' }
       const token = response.data.data.access_token;
+      console.log("Received token:", token);
 
       if (token) {
         // 2. Persist token securely

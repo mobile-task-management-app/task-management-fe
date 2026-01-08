@@ -1,3 +1,4 @@
+import { useAllProjectsTasks } from "@/hooks/useTasks";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useMemo, useRef, useState } from "react";
 import {
@@ -19,9 +20,9 @@ import { spacing } from "../../theme/spacing";
 
 const PRIMARY = "#6D5DF6";
 
-/* ================= MOCK DATA ================= */
+/* ================= TYPES ================= */
 
-type Task = {
+type UITask = {
   id: string;
   title: string;
   start: string;
@@ -30,44 +31,36 @@ type Task = {
   color: string;
 };
 
-const MOCK_TASKS: Task[] = [
-  {
-    id: "1",
-    title: "Wireframe elements 😪",
-    start: "10:00 am",
-    end: "11:00 am",
-    date: new Date(),
-    color: "#6CB4FF",
-  },
-  {
-    id: "2",
-    title: "Mobile app Design 😍",
-    start: "11:40 am",
-    end: "12:40 pm",
-    date: new Date(),
-    color: "#B7DB9C",
-  },
-  {
-    id: "3",
-    title: "Design Team 🤦‍♂️",
-    start: "01:00 pm",
-    end: "02:20 pm",
-    date: new Date(),
-    color: "#FFB55E",
-  },
-  {
-    id: "4",
-    title: "Sprint Review",
-    start: "09:00 am",
-    end: "10:00 am",
-    date: new Date(new Date().setDate(new Date().getDate() + 3)),
-    color: "#FF9AA2",
-  },
-];
-
 /* ================= HELPERS ================= */
 
-const toKey = (d: Date) => d.toISOString().split("T")[0];
+const parseTimestamp = (value: any): Date => {
+  if (!value) return new Date();
+  
+  // If it's already a Date, return it
+  if (value instanceof Date) {
+    return isNaN(value.getTime()) ? new Date() : value;
+  }
+  
+  // If it's a string, try to parse it
+  if (typeof value === 'string') {
+    const parsed = new Date(value);
+    return isNaN(parsed.getTime()) ? new Date() : parsed;
+  }
+  
+  // If it's a number (timestamp), convert it
+  if (typeof value === 'number') {
+    const parsed = new Date(value);
+    return isNaN(parsed.getTime()) ? new Date() : parsed;
+  }
+  
+  return new Date();
+};
+
+const toKey = (d: Date | null | undefined): string => {
+  if (!d) return new Date().toISOString().split("T")[0];
+  const validDate = d instanceof Date && !isNaN(d.getTime()) ? d : new Date();
+  return validDate.toISOString().split("T")[0];
+};
 
 const formatHeadline = (d: Date) =>
   d.toLocaleDateString("en-GB", { month: "long", day: "2-digit" });
@@ -120,9 +113,17 @@ const buildMonthMatrix = (month: Date) => {
 
 export const DailyScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  
+  const startDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+  const endDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
+  
+  const { data, isLoading } = useAllProjectsTasks({
+    startDate,
+    endDate,
+  });
 
   const [view, setView] = useState<"Daily" | "Monthly">("Daily");
-  const [selectedDate, setSelectedDate] = useState(new Date());
   const [month, setMonth] = useState(
     new Date(new Date().getFullYear(), new Date().getMonth(), 1)
   );
@@ -151,19 +152,42 @@ export const DailyScreen: React.FC = () => {
 
   /* ===== DATA ===== */
 
+  const tasks: UITask[] = useMemo(() => {
+    if (!data?.data) return [];
+    return data.data
+      .map((t: any) => {
+        try {
+          const dueDate = parseTimestamp(t.due_date);
+          return {
+            id: String(t.id),
+            title: t.title || "Untitled Task",
+            start: t.start_time ?? "09:00 am",
+            end: t.end_time ?? "10:00 am",
+            date: dueDate,
+            color: PRIMARY,
+          };
+        } catch (error) {
+          console.warn("Error parsing task:", t, error);
+          return null;
+        }
+      })
+      .filter((t): t is UITask => t !== null);
+  }, [data]);
+
   const selectedKey = toKey(selectedDate);
 
-  const tasksToday = MOCK_TASKS.filter(
-    (t) => toKey(t.date) === selectedKey
+  const tasksToday = useMemo(
+    () => tasks.filter((t) => toKey(t.date) === selectedKey),
+    [tasks, selectedKey]
   );
 
   const taskMap = useMemo(() => {
     const map: Record<string, boolean> = {};
-    MOCK_TASKS.forEach((t) => {
+    tasks.forEach((t) => {
       map[toKey(t.date)] = true;
     });
     return map;
-  }, []);
+  }, [tasks]);
 
   const dayStrip = getDateRange(selectedDate);
   const weeks = buildMonthMatrix(month);
@@ -197,57 +221,30 @@ export const DailyScreen: React.FC = () => {
             {tasksToday.length} task today
           </Text>
         </View>
-        <View style={{ minHeight: 500 }}>
-        <View style={styles.dayStrip}>
-            {dayStrip.map((d) => {
-              const active = toKey(d) === selectedKey;
-              return (
-                <Pressable
-                  key={d.toISOString()}
-                  style={[styles.dayCard, active && styles.dayCardActive]}
-                  onPress={() => setSelectedDate(d)}
-                >
-                  <Text style={[styles.dayNumber, active && styles.dayActive]}>
-                    {d.getDate()}
-                  </Text>
-                  <Text style={[styles.dayLabel, active && styles.dayActive]}>
-                    {formatDayLabel(d)}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        {/* DAILY */}
-        <Animated.View
-          style={[
-            styles.animatedLayer,
-            {
-              opacity: dailyOpacity,
-              pointerEvents: view === "Daily" ? "auto" : "none",
-            },
-          ]}
-        >
-          <View style={styles.dayStrip}>
-            {dayStrip.map((d) => {
-              const active = toKey(d) === selectedKey;
-              return (
-                <Pressable
-                  key={d.toISOString()}
-                  style={[styles.dayCard, active && styles.dayCardActive]}
-                  onPress={() => setSelectedDate(d)}
-                >
-                  <Text style={[styles.dayNumber, active && styles.dayActive]}>
-                    {d.getDate()}
-                  </Text>
-                  <Text style={[styles.dayLabel, active && styles.dayActive]}>
-                    {formatDayLabel(d)}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
 
-          {/* TASK TIMELINE */}
+        {/* DAY STRIP */}
+        <View style={styles.dayStrip}>
+          {dayStrip.map((d) => {
+            const active = toKey(d) === selectedKey;
+            return (
+              <Pressable
+                key={d.toISOString()}
+                style={[styles.dayCard, active && styles.dayCardActive]}
+                onPress={() => setSelectedDate(d)}
+              >
+                <Text style={[styles.dayNumber, active && styles.dayActive]}>
+                  {d.getDate()}
+                </Text>
+                <Text style={[styles.dayLabel, active && styles.dayActive]}>
+                  {formatDayLabel(d)}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {/* DAILY */}
+        <Animated.View style={{ opacity: dailyOpacity }}>
           <View style={styles.timeline}>
             {tasksToday.map((t) => (
               <View key={t.id} style={styles.timeRow}>
@@ -268,36 +265,8 @@ export const DailyScreen: React.FC = () => {
         </Animated.View>
 
         {/* MONTHLY */}
-        <Animated.View
-          style={[
-            styles.animatedLayer,
-            {
-              opacity: monthlyOpacity,
-              pointerEvents: view === "Monthly" ? "auto" : "none",
-            },
-          ]}
-        >
-          <View style={styles.dayStrip}>
-            {dayStrip.map((d) => {
-              const active = toKey(d) === selectedKey;
-              return (
-                <Pressable
-                  key={d.toISOString()}
-                  style={[styles.dayCard, active && styles.dayCardActive]}
-                  onPress={() => setSelectedDate(d)}
-                >
-                  <Text style={[styles.dayNumber, active && styles.dayActive]}>
-                    {d.getDate()}
-                  </Text>
-                  <Text style={[styles.dayLabel, active && styles.dayActive]}>
-                    {formatDayLabel(d)}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
+        <Animated.View style={{ opacity: monthlyOpacity }}>
           <View style={styles.calendarCard}>
-            {/* Header */}
             <View style={styles.calendarHeader}>
               <Pressable
                 style={styles.navBtn}
@@ -326,30 +295,22 @@ export const DailyScreen: React.FC = () => {
               </Pressable>
             </View>
 
-            {/* Weekday */}
             <View style={styles.weekHeader}>
-              {["M", "T", "W", "T", "F", "S", "S"].map((d) => (
-                <Text key={d} style={styles.weekLabel}>
+              {["M", "T", "W", "T", "F", "S", "S"].map((d, idx) => (
+                    <Text key={`week-${idx}`} style={styles.weekLabel}>
                   {d}
                 </Text>
               ))}
             </View>
 
-            {/* Days */}
             {weeks.map((week, i) => (
               <View key={i} style={styles.calendarWeekRow}>
                 {week.map(({ date, isCurrentMonth }) => {
                   const key = toKey(date);
-                  const hasTask = taskMap[key];
-                  const active = key === selectedKey;
-
                   return (
                     <Pressable
                       key={key}
-                      style={[
-                        styles.calendarDay,
-                        active && styles.calendarDayActive,
-                      ]}
+                      style={styles.calendarDay}
                       onPress={() => {
                         setSelectedDate(date);
                         toggleView();
@@ -359,13 +320,11 @@ export const DailyScreen: React.FC = () => {
                         style={[
                           styles.calendarDayText,
                           !isCurrentMonth && styles.calendarDayMuted,
-                          active && styles.calendarDayTextActive,
                         ]}
                       >
                         {date.getDate()}
                       </Text>
-
-                      {hasTask && <View style={styles.taskDot} />}
+                      {taskMap[key] && <View style={styles.taskDot} />}
                     </Pressable>
                   );
                 })}
@@ -373,7 +332,12 @@ export const DailyScreen: React.FC = () => {
             ))}
           </View>
         </Animated.View>
-        </View>
+
+        {isLoading && (
+          <Text style={{ textAlign: "center", color: colors.textMuted }}>
+            Loading tasks...
+          </Text>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -427,7 +391,6 @@ const styles = StyleSheet.create({
   },
 
   dayCardActive: { backgroundColor: PRIMARY },
-
   dayNumber: { fontSize: 16, fontWeight: "700" },
   dayLabel: { fontSize: 12, color: colors.textMuted },
   dayActive: { color: "#FFF" },
@@ -464,15 +427,12 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
   },
 
-  /* ===== CALENDAR ===== */
-
   calendarCard: {
     marginTop: spacing.xl,
     marginHorizontal: spacing.xl,
     backgroundColor: colors.card,
     borderRadius: 24,
     padding: spacing.lg,
-    elevation: 3,
   },
 
   calendarHeader: {
@@ -520,13 +480,8 @@ const styles = StyleSheet.create({
   calendarDay: {
     width: 32,
     height: 40,
-    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-  },
-
-  calendarDayActive: {
-    backgroundColor: "#ECEBFF",
   },
 
   calendarDayText: {
@@ -538,11 +493,6 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
 
-  calendarDayTextActive: {
-    color: PRIMARY,
-    fontWeight: "700",
-  },
-
   taskDot: {
     width: 6,
     height: 6,
@@ -550,11 +500,4 @@ const styles = StyleSheet.create({
     backgroundColor: PRIMARY,
     marginTop: 2,
   },
-    animatedLayer: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: 0,
-  },
-
 });
