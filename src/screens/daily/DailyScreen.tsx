@@ -1,7 +1,7 @@
+import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker, {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
-import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
@@ -17,53 +17,17 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import { useAppSelector } from "../../state/hooks";
+import { useSearchTasks } from "../../hooks/useTasks";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
 import { ProjectTask, TaskPriority } from "../../types/models";
 
 const PRIMARY = "#6D5DF6";
 const PRIORITY_ORDER: Record<TaskPriority, number> = {
-  High: 0,
-  Medium: 1,
-  Low: 2,
+  HIGH: 0,
+  MEDIUM: 1,
+  LOW: 2,
 };
-
-const mockTasks: ProjectTask[] = [
-  {
-    id: "task-101",
-    projectId: "project-1",
-    title: "Wiring Dashboard Analytics",
-    description: "",
-    status: "In Progress",
-    priority: "High",
-    dueDate: new Date().toISOString(),
-    attachments: [],
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "task-102",
-    projectId: "project-1",
-    title: "API Dashboard Analytics Integration",
-    description: "",
-    status: "In Progress",
-    priority: "High",
-    dueDate: new Date().toISOString(),
-    attachments: [],
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "task-103",
-    projectId: "project-2",
-    title: "Prepare onboarding copy",
-    description: "",
-    status: "To do",
-    priority: "Medium",
-    dueDate: new Date().toISOString(),
-    attachments: [],
-    createdAt: new Date().toISOString(),
-  },
-];
 
 const VIEW_OPTIONS = ["Daily", "Monthly"] as const;
 
@@ -74,8 +38,7 @@ type CalendarDay = {
   isCurrentMonth: boolean;
 };
 
-const toDateKey = (date: Date) =>
-  date.toISOString().split("T")[0];
+const toDateKey = (date: Date) => date.toISOString().split("T")[0];
 
 const formatHeadline = (date: Date) =>
   date.toLocaleDateString("en-GB", {
@@ -140,8 +103,6 @@ const resolveTaskDate = (task: ProjectTask) =>
 export const DailyScreen: React.FC = () => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const storeTasks = useAppSelector((state) => state.tasks.tasks);
-  const tasks = storeTasks.length > 0 ? storeTasks : mockTasks;
 
   const [viewMode, setViewMode] = useState<ViewMode>("Daily");
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -152,14 +113,33 @@ export const DailyScreen: React.FC = () => {
 
   const selectedKey = toDateKey(selectedDate);
 
+  const { data: taskData } = useSearchTasks({});
+  const tasks = taskData?.data.tasks || [];
+
   const filteredTasks = useMemo(() => {
-    return tasks
+    const taskList: ProjectTask[] = tasks.map((task) => ({
+      id: task.id,
+      projectId: task.project_id,
+      title: task.title,
+      description: task.description,
+      status: task.status,
+      priority: task.priority,
+      dueDate: task.end_date
+        ? new Date(task.end_date).toLocaleDateString("en-GB")
+        : new Date(task.created_at).toLocaleDateString("en-GB"),
+      attachments: [],
+      createdAt: new Date(task.created_at).toLocaleDateString("en-GB"),
+    }));
+
+    return taskList
       .filter((task) => toDateKey(resolveTaskDate(task)) === selectedKey)
-      .sort((a, b) => {
+      .sort((a: ProjectTask, b: ProjectTask) => {
         const priorityDiff =
           PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority];
         if (priorityDiff !== 0) return priorityDiff;
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        return (
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
       });
   }, [tasks, selectedKey]);
 
@@ -240,7 +220,9 @@ export const DailyScreen: React.FC = () => {
                 style={[styles.dayCard, active && styles.dayCardActive]}
                 onPress={() => setSelectedDate(date)}
               >
-                <Text style={[styles.dayNumber, active && styles.dayActiveText]}>
+                <Text
+                  style={[styles.dayNumber, active && styles.dayActiveText]}
+                >
                   {date.getDate()}
                 </Text>
                 <Text style={[styles.dayLabel, active && styles.dayActiveText]}>
@@ -324,7 +306,7 @@ export const DailyScreen: React.FC = () => {
         ) : null}
 
         <View style={styles.taskList}>
-          {filteredTasks.map((task) => (
+          {filteredTasks.map((task: ProjectTask) => (
             <TaskCard
               key={task.id}
               task={task}
@@ -397,8 +379,8 @@ const TaskCard = ({
         <View
           style={[
             styles.priorityPill,
-            task.priority === "Medium" && styles.priorityMedium,
-            task.priority === "Low" && styles.priorityLow,
+            task.priority === "MEDIUM" && styles.priorityMedium,
+            task.priority === "LOW" && styles.priorityLow,
           ]}
         >
           <Ionicons name="flag" size={12} color="#FFFFFF" />
