@@ -10,7 +10,7 @@ import {
 } from "./generated";
 
 // 1. Define your Base URL
-const BASE_URL = "http://localhost:3000";
+const BASE_URL = "https://taskflow.biboxstorage.xyz/";
 
 // 2. Create a shared Axios instance
 // This allows you to add interceptors for logging or global error handling
