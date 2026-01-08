@@ -117,7 +117,9 @@ export const CreateTaskScreen: React.FC = () => {
     existingTask?.priority ?? null
   );
   const [dueDate, setDueDate] = useState<string | null>(
-    existingTask?.end_date ?? null
+    existingTask?.end_date
+      ? new Date(existingTask.end_date).toDateString()
+      : null
   );
   const [attachments, setAttachments] = useState<string[]>(
     existingTask?.attachments.map((key) => key.download_url ?? "") ?? []

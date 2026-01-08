@@ -10,6 +10,26 @@ import { Provider } from "react-redux";
 import { CreateActionModal } from "../src/components/modals/CreateActionModal";
 import { useAppSelector } from "../src/state/hooks";
 import { store } from "../src/state/store";
+import * as Sentry from '@sentry/react-native';
+
+Sentry.init({
+  dsn: 'https://58b548a6fb8fad337456b6e1337a3367@o4510499789340672.ingest.us.sentry.io/4510675179929600',
+
+  // Adds more context data to events (IP address, cookies, user, etc.)
+  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+  sendDefaultPii: true,
+
+  // Enable Logs
+  enableLogs: true,
+
+  // Configure Session Replay
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1,
+  integrations: [Sentry.mobileReplayIntegration(), Sentry.feedbackIntegration()],
+
+  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  // spotlight: __DEV__,
+});
 
 // 2. Create the Query Client instance
 const queryClient = new QueryClient({
@@ -105,4 +125,4 @@ const RootLayout = () => {
   );
 };
 
-export default RootLayout;
+export default Sentry.wrap(RootLayout);
