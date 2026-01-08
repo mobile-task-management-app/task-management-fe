@@ -14,7 +14,7 @@ import DateTimePicker, {
 } from "@react-native-community/datetimepicker";
 import { useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import * as ImageManipulator from "expo-image-manipulator";
+// import * as ImageManipulator from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -191,35 +191,31 @@ export const CreateTaskScreen: React.FC = () => {
   const handlePickFromLibrary = async () => {
     const granted = await ensurePermission("library");
     if (!granted) return;
+
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 0.8,
     });
+
     if (!result.canceled && result.assets?.[0]?.uri) {
-      const manipulatedImage = await ImageManipulator.manipulateAsync(
-        result.assets[0].uri,
-        [],
-        { format: ImageManipulator.SaveFormat.JPEG }
-      );
-      addAttachment(manipulatedImage.uri);
+      addAttachment(result.assets[0].uri);
     }
+
     setShowAttachmentPicker(false);
   };
 
   const handleTakePhoto = async () => {
     const granted = await ensurePermission("camera");
     if (!granted) return;
+
     const result = await ImagePicker.launchCameraAsync({
       quality: 0.8,
     });
+
     if (!result.canceled && result.assets?.[0]?.uri) {
-      const manipulatedImage = await ImageManipulator.manipulateAsync(
-        result.assets[0].uri,
-        [],
-        { format: ImageManipulator.SaveFormat.JPEG }
-      );
-      addAttachment(manipulatedImage.uri);
+      addAttachment(result.assets[0].uri);
     }
+
     setShowAttachmentPicker(false);
   };
 
