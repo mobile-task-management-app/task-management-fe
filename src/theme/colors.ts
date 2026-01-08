@@ -11,4 +11,11 @@ export const colors = {
   danger: "#EF4444",
   info: "#3B82F6",
   shadow: "#0B0F2A",
+  randomColors: [
+    "#FF6B6B",
+    "#4ECDC4",
+    "#45B7D1",
+    "#FFA07A",
+    "#BB8FCE",
+  ],
 };

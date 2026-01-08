@@ -164,7 +164,7 @@ export const DailyScreen: React.FC = () => {
             start: t.start_time ?? "09:00 am",
             end: t.end_time ?? "10:00 am",
             date: dueDate,
-            color: PRIMARY,
+            color: colors.randomColors[t.id % colors.randomColors.length],
           };
         } catch (error) {
           console.warn("Error parsing task:", t, error);
@@ -223,6 +223,7 @@ export const DailyScreen: React.FC = () => {
         </View>
 
         {/* DAY STRIP */}
+        <View style={{ minHeight: 100 }}>
         <View style={styles.dayStrip}>
           {dayStrip.map((d) => {
             const active = toKey(d) === selectedKey;
@@ -244,7 +245,15 @@ export const DailyScreen: React.FC = () => {
         </View>
 
         {/* DAILY */}
-        <Animated.View style={{ opacity: dailyOpacity }}>
+        <Animated.View
+          style={[
+            styles.animatedLayer,
+            {
+              opacity: dailyOpacity,
+              pointerEvents: view === "Daily" ? "auto" : "none",
+            },
+          ]}
+        >
           <View style={styles.timeline}>
             {tasksToday.map((t) => (
               <View key={t.id} style={styles.timeRow}>
@@ -265,7 +274,15 @@ export const DailyScreen: React.FC = () => {
         </Animated.View>
 
         {/* MONTHLY */}
-        <Animated.View style={{ opacity: monthlyOpacity }}>
+        <Animated.View
+          style={[
+            styles.animatedLayer,
+            {
+              opacity: monthlyOpacity,
+              pointerEvents: view === "Monthly" ? "auto" : "none",
+            },
+          ]}
+        >
           <View style={styles.calendarCard}>
             <View style={styles.calendarHeader}>
               <Pressable
@@ -332,6 +349,7 @@ export const DailyScreen: React.FC = () => {
             ))}
           </View>
         </Animated.View>
+        </View>
 
         {isLoading && (
           <Text style={{ textAlign: "center", color: colors.textMuted }}>
@@ -433,6 +451,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: 24,
     padding: spacing.lg,
+    elevation: 3,
   },
 
   calendarHeader: {
@@ -480,6 +499,7 @@ const styles = StyleSheet.create({
   calendarDay: {
     width: 32,
     height: 40,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -499,5 +519,11 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     backgroundColor: PRIMARY,
     marginTop: 2,
+  },
+  animatedLayer: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 120,
   },
 });
