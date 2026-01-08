@@ -207,6 +207,9 @@ export interface SearchProjectResponseDTO {
 export interface SearchProjectTaskResponseDTO {
     'tasks': Array<TaskResponseDTO>;
 }
+export interface SearchTaskResponseDTO {
+    'tasks': Array<TaskResponseDTO>;
+}
 export interface SignUpRequestDTO {
     'email': string;
     'password': string;
@@ -232,8 +235,14 @@ export interface TaskAttachmentsUploadResponseDTO {
     'priority': TaskPriority;
     'category_ids': Array<number>;
     'attachments': Array<TaskAttachmentResponseDTO>;
-    'start_date': string;
-    'end_date': string;
+    /**
+     * Project start date as a Unix timestamp (seconds)
+     */
+    'start_date'?: number;
+    /**
+     * Project end date as a Unix timestamp (seconds)
+     */
+    'end_date'?: number;
     'description': string;
     'created_at': string;
     'updated_at': string;
@@ -244,6 +253,11 @@ export interface TaskControllerGetTaskById200Response {
     'success': boolean;
     'message': string;
     'data': TaskResponseDTO;
+}
+export interface TaskControllerSearchUserTasks200Response {
+    'success': boolean;
+    'message': string;
+    'data': SearchTaskResponseDTO;
 }
 
 export const TaskPriority = {
@@ -264,8 +278,14 @@ export interface TaskResponseDTO {
     'priority': TaskPriority;
     'category_ids': Array<number>;
     'attachments': Array<TaskAttachmentResponseDTO>;
-    'start_date': string;
-    'end_date': string;
+    /**
+     * Project start date as a Unix timestamp (seconds)
+     */
+    'start_date'?: number;
+    /**
+     * Project end date as a Unix timestamp (seconds)
+     */
+    'end_date'?: number;
     'description': string;
     'created_at': string;
     'updated_at': string;
@@ -1552,6 +1572,106 @@ export const TasksApiAxiosParamCreator = function (configuration?: Configuration
         },
         /**
          * 
+         * @summary List all tasks for the current user
+         * @param {TaskControllerSearchUserTasksStatusEnum} [status] Filter tasks by their current status
+         * @param {TaskControllerSearchUserTasksPriorityEnum} [priority] Filter tasks by their priority
+         * @param {number} [categoryId] Filter by category ID
+         * @param {string} [startDate] Filter by start date. Supports single Unix timestamp or range (min,max)
+         * @param {string} [endDate] Filter by end date. Supports single Unix timestamp or range (min,max)
+         * @param {string} [sort] The field to sort the results by
+         * @param {boolean} [asc] Sort order: true for ascending, false for descending
+         * @param {string} [status2] Filter tasks by their current status
+         * @param {string} [priority2] Filter tasks by their priority
+         * @param {number} [categoryId2] Filter by category ID
+         * @param {string} [startDate2] Filter by start date. Supports single Unix timestamp or range (min,max)
+         * @param {string} [endDate2] Filter by end date. Supports single Unix timestamp or range (min,max)
+         * @param {string} [sort2] The field to sort the results by
+         * @param {boolean} [asc2] Sort order: true for ascending, false for descending
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        taskControllerSearchUserTasks: async (status?: TaskControllerSearchUserTasksStatusEnum, priority?: TaskControllerSearchUserTasksPriorityEnum, categoryId?: number, startDate?: string, endDate?: string, sort?: string, asc?: boolean, status2?: string, priority2?: string, categoryId2?: number, startDate2?: string, endDate2?: string, sort2?: string, asc2?: boolean, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/v1/tasks`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            if (status !== undefined) {
+                localVarQueryParameter['status'] = status;
+            }
+
+            if (priority !== undefined) {
+                localVarQueryParameter['priority'] = priority;
+            }
+
+            if (categoryId !== undefined) {
+                localVarQueryParameter['category_id'] = categoryId;
+            }
+
+            if (startDate !== undefined) {
+                localVarQueryParameter['start_date'] = startDate;
+            }
+
+            if (endDate !== undefined) {
+                localVarQueryParameter['end_date'] = endDate;
+            }
+
+            if (sort !== undefined) {
+                localVarQueryParameter['sort'] = sort;
+            }
+
+            if (asc !== undefined) {
+                localVarQueryParameter['asc'] = asc;
+            }
+
+            if (status2 !== undefined) {
+                localVarQueryParameter['status'] = status2;
+            }
+
+            if (priority2 !== undefined) {
+                localVarQueryParameter['priority'] = priority2;
+            }
+
+            if (categoryId2 !== undefined) {
+                localVarQueryParameter['category_id'] = categoryId2;
+            }
+
+            if (startDate2 !== undefined) {
+                localVarQueryParameter['start_date'] = startDate2;
+            }
+
+            if (endDate2 !== undefined) {
+                localVarQueryParameter['end_date'] = endDate2;
+            }
+
+            if (sort2 !== undefined) {
+                localVarQueryParameter['sort'] = sort2;
+            }
+
+            if (asc2 !== undefined) {
+                localVarQueryParameter['asc'] = asc2;
+            }
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @summary Update task details
          * @param {number} id The unique ID of the task
          * @param {UpdateTaskRequestDTO} updateTaskRequestDTO 
@@ -1641,6 +1761,32 @@ export const TasksApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @summary List all tasks for the current user
+         * @param {TaskControllerSearchUserTasksStatusEnum} [status] Filter tasks by their current status
+         * @param {TaskControllerSearchUserTasksPriorityEnum} [priority] Filter tasks by their priority
+         * @param {number} [categoryId] Filter by category ID
+         * @param {string} [startDate] Filter by start date. Supports single Unix timestamp or range (min,max)
+         * @param {string} [endDate] Filter by end date. Supports single Unix timestamp or range (min,max)
+         * @param {string} [sort] The field to sort the results by
+         * @param {boolean} [asc] Sort order: true for ascending, false for descending
+         * @param {string} [status2] Filter tasks by their current status
+         * @param {string} [priority2] Filter tasks by their priority
+         * @param {number} [categoryId2] Filter by category ID
+         * @param {string} [startDate2] Filter by start date. Supports single Unix timestamp or range (min,max)
+         * @param {string} [endDate2] Filter by end date. Supports single Unix timestamp or range (min,max)
+         * @param {string} [sort2] The field to sort the results by
+         * @param {boolean} [asc2] Sort order: true for ascending, false for descending
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async taskControllerSearchUserTasks(status?: TaskControllerSearchUserTasksStatusEnum, priority?: TaskControllerSearchUserTasksPriorityEnum, categoryId?: number, startDate?: string, endDate?: string, sort?: string, asc?: boolean, status2?: string, priority2?: string, categoryId2?: number, startDate2?: string, endDate2?: string, sort2?: string, asc2?: boolean, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TaskControllerSearchUserTasks200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.taskControllerSearchUserTasks(status, priority, categoryId, startDate, endDate, sort, asc, status2, priority2, categoryId2, startDate2, endDate2, sort2, asc2, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['TasksApi.taskControllerSearchUserTasks']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @summary Update task details
          * @param {number} id The unique ID of the task
          * @param {UpdateTaskRequestDTO} updateTaskRequestDTO 
@@ -1692,6 +1838,29 @@ export const TasksApiFactory = function (configuration?: Configuration, basePath
          */
         taskControllerGetTaskById(id: number, options?: RawAxiosRequestConfig): AxiosPromise<TaskControllerGetTaskById200Response> {
             return localVarFp.taskControllerGetTaskById(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary List all tasks for the current user
+         * @param {TaskControllerSearchUserTasksStatusEnum} [status] Filter tasks by their current status
+         * @param {TaskControllerSearchUserTasksPriorityEnum} [priority] Filter tasks by their priority
+         * @param {number} [categoryId] Filter by category ID
+         * @param {string} [startDate] Filter by start date. Supports single Unix timestamp or range (min,max)
+         * @param {string} [endDate] Filter by end date. Supports single Unix timestamp or range (min,max)
+         * @param {string} [sort] The field to sort the results by
+         * @param {boolean} [asc] Sort order: true for ascending, false for descending
+         * @param {string} [status2] Filter tasks by their current status
+         * @param {string} [priority2] Filter tasks by their priority
+         * @param {number} [categoryId2] Filter by category ID
+         * @param {string} [startDate2] Filter by start date. Supports single Unix timestamp or range (min,max)
+         * @param {string} [endDate2] Filter by end date. Supports single Unix timestamp or range (min,max)
+         * @param {string} [sort2] The field to sort the results by
+         * @param {boolean} [asc2] Sort order: true for ascending, false for descending
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        taskControllerSearchUserTasks(status?: TaskControllerSearchUserTasksStatusEnum, priority?: TaskControllerSearchUserTasksPriorityEnum, categoryId?: number, startDate?: string, endDate?: string, sort?: string, asc?: boolean, status2?: string, priority2?: string, categoryId2?: number, startDate2?: string, endDate2?: string, sort2?: string, asc2?: boolean, options?: RawAxiosRequestConfig): AxiosPromise<TaskControllerSearchUserTasks200Response> {
+            return localVarFp.taskControllerSearchUserTasks(status, priority, categoryId, startDate, endDate, sort, asc, status2, priority2, categoryId2, startDate2, endDate2, sort2, asc2, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -1747,6 +1916,30 @@ export class TasksApi extends BaseAPI {
 
     /**
      * 
+     * @summary List all tasks for the current user
+     * @param {TaskControllerSearchUserTasksStatusEnum} [status] Filter tasks by their current status
+     * @param {TaskControllerSearchUserTasksPriorityEnum} [priority] Filter tasks by their priority
+     * @param {number} [categoryId] Filter by category ID
+     * @param {string} [startDate] Filter by start date. Supports single Unix timestamp or range (min,max)
+     * @param {string} [endDate] Filter by end date. Supports single Unix timestamp or range (min,max)
+     * @param {string} [sort] The field to sort the results by
+     * @param {boolean} [asc] Sort order: true for ascending, false for descending
+     * @param {string} [status2] Filter tasks by their current status
+     * @param {string} [priority2] Filter tasks by their priority
+     * @param {number} [categoryId2] Filter by category ID
+     * @param {string} [startDate2] Filter by start date. Supports single Unix timestamp or range (min,max)
+     * @param {string} [endDate2] Filter by end date. Supports single Unix timestamp or range (min,max)
+     * @param {string} [sort2] The field to sort the results by
+     * @param {boolean} [asc2] Sort order: true for ascending, false for descending
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public taskControllerSearchUserTasks(status?: TaskControllerSearchUserTasksStatusEnum, priority?: TaskControllerSearchUserTasksPriorityEnum, categoryId?: number, startDate?: string, endDate?: string, sort?: string, asc?: boolean, status2?: string, priority2?: string, categoryId2?: number, startDate2?: string, endDate2?: string, sort2?: string, asc2?: boolean, options?: RawAxiosRequestConfig) {
+        return TasksApiFp(this.configuration).taskControllerSearchUserTasks(status, priority, categoryId, startDate, endDate, sort, asc, status2, priority2, categoryId2, startDate2, endDate2, sort2, asc2, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
      * @summary Update task details
      * @param {number} id The unique ID of the task
      * @param {UpdateTaskRequestDTO} updateTaskRequestDTO 
@@ -1758,6 +1951,19 @@ export class TasksApi extends BaseAPI {
     }
 }
 
+export const TaskControllerSearchUserTasksStatusEnum = {
+    Todo: 'TODO',
+    InProgress: 'IN_PROGRESS',
+    Done: 'DONE',
+    Cancelled: 'CANCELLED'
+} as const;
+export type TaskControllerSearchUserTasksStatusEnum = typeof TaskControllerSearchUserTasksStatusEnum[keyof typeof TaskControllerSearchUserTasksStatusEnum];
+export const TaskControllerSearchUserTasksPriorityEnum = {
+    Low: 'LOW',
+    Medium: 'MEDIUM',
+    High: 'HIGH'
+} as const;
+export type TaskControllerSearchUserTasksPriorityEnum = typeof TaskControllerSearchUserTasksPriorityEnum[keyof typeof TaskControllerSearchUserTasksPriorityEnum];
 
 
 /**
