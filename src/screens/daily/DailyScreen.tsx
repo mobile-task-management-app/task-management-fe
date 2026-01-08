@@ -1,5 +1,6 @@
 import { ProjectTask, TaskPriority } from "@/types/models";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import React, { useMemo, useRef, useState } from "react";
 import {
   Animated,
@@ -46,6 +47,8 @@ const getDateRange = (center: Date) =>
     d.setDate(center.getDate() + o);
     return d;
   });
+const resolveTaskDate = (task: ProjectTask) =>
+  task.dueDate ? new Date(task.dueDate) : new Date(task.createdAt);
 
 const buildMonthMatrix = (month: Date) => {
   const start = new Date(month.getFullYear(), month.getMonth(), 1);
@@ -82,12 +85,14 @@ const buildMonthMatrix = (month: Date) => {
 
 export const DailyScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
 
   const [view, setView] = useState<"Daily" | "Monthly">("Daily");
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [month, setMonth] = useState(
     new Date(new Date().getFullYear(), new Date().getMonth(), 1)
   );
+  const selectedKey = toKey(selectedDate);
 
   /* ===== Animation ===== */
   const dailyOpacity = useRef(new Animated.Value(1)).current;
@@ -95,33 +100,6 @@ export const DailyScreen: React.FC = () => {
 
   const { data: taskData } = useSearchTasks({});
   const tasks = taskData?.data.tasks || [];
-
-  const filteredTasks = useMemo(() => {
-    const taskList: ProjectTask[] = tasks.map((task) => ({
-      id: task.id,
-      projectId: task.project_id,
-      title: task.title,
-      description: task.description,
-      status: task.status,
-      priority: task.priority,
-      dueDate: task.end_date
-        ? new Date(task.end_date).toLocaleDateString("en-GB")
-        : new Date(task.created_at).toLocaleDateString("en-GB"),
-      attachments: [],
-      createdAt: new Date(task.created_at).toLocaleDateString("en-GB"),
-    }));
-
-    return taskList
-      .filter((task) => toDateKey(resolveTaskDate(task)) === selectedKey)
-      .sort((a: ProjectTask, b: ProjectTask) => {
-        const priorityDiff =
-          PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority];
-        if (priorityDiff !== 0) return priorityDiff;
-        return (
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-      });
-  }, [tasks, selectedKey]);
   const toggleView = () => {
     const toMonthly = view === "Daily";
     setView(toMonthly ? "Monthly" : "Daily");
@@ -142,14 +120,20 @@ export const DailyScreen: React.FC = () => {
 
   /* ===== DATA ===== */
 
-  const selectedKey = toKey(selectedDate);
-
-  const tasksToday = MOCK_TASKS.filter((t) => toKey(t.date) === selectedKey);
+  const tasksToday = tasks.filter(
+    (t) => t.end_date && toKey(new Date(t.end_date * 1000)) === selectedKey
+  );
 
   const taskMap = useMemo(() => {
     const map: Record<string, boolean> = {};
-    MOCK_TASKS.forEach((t) => {
-      map[toKey(t.date)] = true;
+    tasks.forEach((t) => {
+      map[
+        toKey(
+          t.end_date
+            ? new Date(Date.now() + t.end_date * 1000)
+            : new Date(t.created_at)
+        )
+      ] = true;
     });
     return map;
   }, []);
@@ -242,13 +226,40 @@ export const DailyScreen: React.FC = () => {
             <View style={styles.timeline}>
               {tasksToday.map((t) => (
                 <View key={t.id} style={styles.timeRow}>
-                  <Text style={styles.timeLabel}>{t.start}</Text>
-                  <View style={[styles.taskCard, { backgroundColor: t.color }]}>
+                  <Text style={styles.timeLabel}>
+                    {t.start_date
+                      ? new Date(t.start_date * 1000).toLocaleTimeString(
+                          "en-GB",
+                          { hour: "2-digit", minute: "2-digit" }
+                        )
+                      : "All day"}
+                  </Text>
+                  <Pressable
+                    style={[styles.taskCard, { backgroundColor: PRIMARY }]}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/project/task/[id]",
+                        params: { id: t.id, projectId: t.project_id },
+                      })
+                    }
+                  >
                     <Text style={styles.taskTitle}>{t.title}</Text>
                     <Text style={styles.taskTime}>
-                      {t.start} - {t.end}
+                      {t.start_date
+                        ? new Date(t.start_date * 1000).toLocaleTimeString(
+                            "en-GB",
+                            { hour: "2-digit", minute: "2-digit" }
+                          )
+                        : "All day"}{" "}
+                      -{" "}
+                      {t.end_date
+                        ? new Date(t.end_date * 1000).toLocaleTimeString(
+                            "en-GB",
+                            { hour: "2-digit", minute: "2-digit" }
+                          )
+                        : "All day"}
                     </Text>
-                  </View>
+                  </Pressable>
                 </View>
               ))}
 
@@ -321,8 +332,8 @@ export const DailyScreen: React.FC = () => {
 
               {/* Weekday */}
               <View style={styles.weekHeader}>
-                {["M", "T", "W", "T", "F", "S", "S"].map((d) => (
-                  <Text key={d} style={styles.weekLabel}>
+                {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
+                  <Text key={i} style={styles.weekLabel}>
                     {d}
                   </Text>
                 ))}

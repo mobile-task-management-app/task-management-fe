@@ -135,7 +135,11 @@ export const CreateTaskScreen: React.FC = () => {
       setDescription(existingTask.description ?? "");
       setStatus(existingTask.status ?? null);
       setPriority(existingTask.priority ?? null);
-      setDueDate(existingTask.end_date ?? null);
+      setDueDate(
+        existingTask.end_date
+          ? new Date(existingTask.end_date * 1000).toISOString()
+          : null
+      );
       setAttachments(
         existingTask.attachments.map((key) => key.download_url ?? "") ?? []
       );
@@ -290,6 +294,9 @@ export const CreateTaskScreen: React.FC = () => {
           // Invalidate the tasks query to refetch on navigation back
           queryClient.invalidateQueries({
             queryKey: ["project-tasks-search", Number(projectId), {}],
+          });
+          queryClient.invalidateQueries({
+            queryKey: ["tasks-search", {}],
           });
           setShowConfirm(false);
           setShowSuccess(true);
