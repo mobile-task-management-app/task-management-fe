@@ -96,3 +96,23 @@ export const useUpdateTask = (
     onError: onError,
   });
 };
+export const useSearchTasks = (params: SearchProjectTaskQuery) => {
+  return useQuery({
+    queryKey: ["tasks-search", params],
+    queryFn: async () => {
+      const response = await taskApi.taskControllerSearchUserTasks(
+        params.status,
+        params.priority,
+        params.categoryId,
+        params.startDate,
+        params.endDate,
+        params.sort,
+        params.asc
+      );
+      return response.data;
+    },
+    enabled: true,
+    retry: 1,
+    staleTime: 1000 * 60 * 5,
+  });
+};

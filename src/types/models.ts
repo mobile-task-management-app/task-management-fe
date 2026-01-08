@@ -19,8 +19,8 @@ export type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE" | "CANCELLED";
 export type TaskPriority = "LOW" | "MEDIUM" | "HIGH";
 
 export type ProjectTask = {
-  id: string;
-  projectId: string;
+  id: number;
+  projectId: number;
   title: string;
   description?: string;
   status: TaskStatus;

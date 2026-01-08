@@ -25,10 +25,12 @@ docs/ProjectTasksApi.md
 docs/ProjectsApi.md
 docs/SearchProjectResponseDTO.md
 docs/SearchProjectTaskResponseDTO.md
+docs/SearchTaskResponseDTO.md
 docs/SignUpRequestDTO.md
 docs/TaskAttachmentResponseDTO.md
 docs/TaskAttachmentsUploadResponseDTO.md
 docs/TaskControllerGetTaskById200Response.md
+docs/TaskControllerSearchUserTasks200Response.md
 docs/TaskPriority.md
 docs/TaskResponseDTO.md
 docs/TaskStatus.md
