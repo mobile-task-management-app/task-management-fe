@@ -1,12 +1,8 @@
+import { ProjectTask, TaskPriority } from "@/types/models";
 import { Ionicons } from "@expo/vector-icons";
-import DateTimePicker, {
-  DateTimePickerEvent,
-} from "@react-native-community/datetimepicker";
-import { useRouter } from "expo-router";
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import {
-  Modal,
-  Platform,
+  Animated,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -20,7 +16,8 @@ import {
 import { useSearchTasks } from "../../hooks/useTasks";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
-import { ProjectTask, TaskPriority } from "../../types/models";
+
+/* ================= CONSTANTS ================= */
 
 const PRIMARY = "#6D5DF6";
 const PRIORITY_ORDER: Record<TaskPriority, number> = {
@@ -31,87 +28,70 @@ const PRIORITY_ORDER: Record<TaskPriority, number> = {
 
 const VIEW_OPTIONS = ["Daily", "Monthly"] as const;
 
-type ViewMode = (typeof VIEW_OPTIONS)[number];
+const toKey = (d: Date) => d.toISOString().split("T")[0];
 
-type CalendarDay = {
-  date: Date;
-  isCurrentMonth: boolean;
-};
+const formatHeadline = (d: Date) =>
+  d.toLocaleDateString("en-GB", { month: "long", day: "2-digit" });
 
 const toDateKey = (date: Date) => date.toISOString().split("T")[0];
+const formatDayLabel = (d: Date) =>
+  d.toLocaleDateString("en-GB", { weekday: "short" });
 
-const formatHeadline = (date: Date) =>
-  date.toLocaleDateString("en-GB", {
-    month: "long",
-    day: "2-digit",
+const formatMonthTitle = (d: Date) =>
+  d.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+
+const getDateRange = (center: Date) =>
+  [-2, -1, 0, 1, 2].map((o) => {
+    const d = new Date(center);
+    d.setDate(center.getDate() + o);
+    return d;
   });
 
-const formatDayLabel = (date: Date) =>
-  date.toLocaleDateString("en-GB", { weekday: "short" });
-
-const formatMonthTitle = (date: Date) =>
-  date.toLocaleDateString("en-GB", {
-    month: "long",
-    year: "numeric",
-  });
-
-const getDateRange = (center: Date) => {
-  return [-2, -1, 0, 1, 2].map((offset) => {
-    const date = new Date(center);
-    date.setDate(center.getDate() + offset);
-    return date;
-  });
-};
-
-const buildMonthMatrix = (monthDate: Date) => {
-  const start = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
-  const end = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
+const buildMonthMatrix = (month: Date) => {
+  const start = new Date(month.getFullYear(), month.getMonth(), 1);
+  const end = new Date(month.getFullYear(), month.getMonth() + 1, 0);
   const startDay = (start.getDay() + 6) % 7;
-  const daysInMonth = end.getDate();
 
-  const days: CalendarDay[] = [];
+  const days: { date: Date; isCurrentMonth: boolean }[] = [];
 
-  for (let i = startDay; i > 0; i -= 1) {
-    const date = new Date(start);
-    date.setDate(start.getDate() - i);
-    days.push({ date, isCurrentMonth: false });
+  for (let i = startDay; i > 0; i--) {
+    const d = new Date(start);
+    d.setDate(start.getDate() - i);
+    days.push({ date: d, isCurrentMonth: false });
   }
 
-  for (let day = 1; day <= daysInMonth; day += 1) {
+  for (let d = 1; d <= end.getDate(); d++) {
     days.push({
-      date: new Date(monthDate.getFullYear(), monthDate.getMonth(), day),
+      date: new Date(month.getFullYear(), month.getMonth(), d),
       isCurrentMonth: true,
     });
   }
 
-  const remaining = 7 - (days.length % 7 || 7);
-  for (let i = 1; i <= remaining; i += 1) {
-    const date = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, i);
-    days.push({ date, isCurrentMonth: false });
+  while (days.length % 7 !== 0) {
+    const d = new Date(end);
+    d.setDate(end.getDate() + (days.length % 7));
+    days.push({ date: d, isCurrentMonth: false });
   }
 
-  const weeks: CalendarDay[][] = [];
-  for (let i = 0; i < days.length; i += 7) {
-    weeks.push(days.slice(i, i + 7));
-  }
-  return weeks;
+  return Array.from({ length: days.length / 7 }, (_, i) =>
+    days.slice(i * 7, i * 7 + 7)
+  );
 };
 
-const resolveTaskDate = (task: ProjectTask) =>
-  task.dueDate ? new Date(task.dueDate) : new Date(task.createdAt);
+/* ================= COMPONENT ================= */
 
 export const DailyScreen: React.FC = () => {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const [viewMode, setViewMode] = useState<ViewMode>("Daily");
+  const [view, setView] = useState<"Daily" | "Monthly">("Daily");
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [showPicker, setShowPicker] = useState(false);
-  const [calendarMonth, setCalendarMonth] = useState(
+  const [month, setMonth] = useState(
     new Date(new Date().getFullYear(), new Date().getMonth(), 1)
   );
 
-  const selectedKey = toDateKey(selectedDate);
+  /* ===== Animation ===== */
+  const dailyOpacity = useRef(new Animated.Value(1)).current;
+  const monthlyOpacity = useRef(new Animated.Value(0)).current;
 
   const { data: taskData } = useSearchTasks({});
   const tasks = taskData?.data.tasks || [];
@@ -142,278 +122,270 @@ export const DailyScreen: React.FC = () => {
         );
       });
   }, [tasks, selectedKey]);
+  const toggleView = () => {
+    const toMonthly = view === "Daily";
+    setView(toMonthly ? "Monthly" : "Daily");
 
-  const dayStrip = useMemo(() => getDateRange(selectedDate), [selectedDate]);
-  const calendarWeeks = useMemo(
-    () => buildMonthMatrix(calendarMonth),
-    [calendarMonth]
-  );
-
-  const onPickerChange = (event: DateTimePickerEvent, value?: Date) => {
-    if (Platform.OS === "android") setShowPicker(false);
-    if (value) {
-      setSelectedDate(value);
-      setCalendarMonth(new Date(value.getFullYear(), value.getMonth(), 1));
-    }
+    Animated.parallel([
+      Animated.timing(dailyOpacity, {
+        toValue: toMonthly ? 0 : 1,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+      Animated.timing(monthlyOpacity, {
+        toValue: toMonthly ? 1 : 0,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+    ]).start();
   };
 
+  /* ===== DATA ===== */
+
+  const selectedKey = toKey(selectedDate);
+
+  const tasksToday = MOCK_TASKS.filter((t) => toKey(t.date) === selectedKey);
+
+  const taskMap = useMemo(() => {
+    const map: Record<string, boolean> = {};
+    MOCK_TASKS.forEach((t) => {
+      map[toKey(t.date)] = true;
+    });
+    return map;
+  }, []);
+
+  const dayStrip = getDateRange(selectedDate);
+  const weeks = buildMonthMatrix(month);
+
+  /* ================= RENDER ================= */
+
   return (
-    <SafeAreaView style={styles.container} edges={["left", "right", "bottom"]}>
+    <SafeAreaView style={styles.container}>
       <ScrollView
-        contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xl }}
-        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingBottom: insets.bottom + spacing.xl,
+        }}
       >
+        {/* HEADER */}
         <View style={styles.header}>
-          <Pressable style={styles.circleButton} onPress={() => router.back()}>
-            <Ionicons name="chevron-back" size={18} color={PRIMARY} />
-          </Pressable>
+          <View style={{ width: 40 }} />
           <Text style={styles.headerTitle}>
-            {viewMode === "Daily" ? "Today Task" : "Monthly Task"}
+            {view === "Daily" ? "Today Task" : "Monthly Task"}
           </Text>
-          <Pressable
-            style={styles.circleButton}
-            onPress={() => setShowPicker(true)}
-          >
+          <Pressable style={styles.circleButton} onPress={toggleView}>
             <Ionicons name="calendar" size={18} color={PRIMARY} />
           </Pressable>
         </View>
 
+        {/* HEADLINE */}
         <View style={styles.headlineRow}>
-          <View>
-            <Text style={styles.headlineTitle}>
-              {formatHeadline(selectedDate)} ✍️
-            </Text>
-            <Text style={styles.headlineSubtitle}>
-              {filteredTasks.length} task today
-            </Text>
-          </View>
+          <Text style={styles.headlineTitle}>
+            {formatHeadline(selectedDate)} ✍️
+          </Text>
+          <Text style={styles.headlineSubtitle}>
+            {tasksToday.length} task today
+          </Text>
         </View>
-
-        <View style={styles.viewToggle}>
-          {VIEW_OPTIONS.map((option) => (
-            <Pressable
-              key={option}
-              style={[
-                styles.viewTogglePill,
-                viewMode === option && styles.viewTogglePillActive,
-              ]}
-              onPress={() => setViewMode(option)}
-            >
-              <Text
-                style={[
-                  styles.viewToggleText,
-                  viewMode === option && styles.viewToggleTextActive,
-                ]}
-              >
-                {option}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-
-        <View style={styles.dayStrip}>
-          {dayStrip.map((date) => {
-            const active = toDateKey(date) === selectedKey;
-            return (
-              <Pressable
-                key={date.toISOString()}
-                style={[styles.dayCard, active && styles.dayCardActive]}
-                onPress={() => setSelectedDate(date)}
-              >
-                <Text
-                  style={[styles.dayNumber, active && styles.dayActiveText]}
+        <View style={{ minHeight: 500 }}>
+          <View style={styles.dayStrip}>
+            {dayStrip.map((d) => {
+              const active = toKey(d) === selectedKey;
+              return (
+                <Pressable
+                  key={d.toISOString()}
+                  style={[styles.dayCard, active && styles.dayCardActive]}
+                  onPress={() => setSelectedDate(d)}
                 >
-                  {date.getDate()}
-                </Text>
-                <Text style={[styles.dayLabel, active && styles.dayActiveText]}>
-                  {formatDayLabel(date)}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        {viewMode === "Monthly" ? (
-          <View style={styles.calendarCard}>
-            <View style={styles.calendarHeader}>
-              <Pressable
-                style={styles.calendarArrow}
-                onPress={() =>
-                  setCalendarMonth(
-                    new Date(
-                      calendarMonth.getFullYear(),
-                      calendarMonth.getMonth() - 1,
-                      1
-                    )
-                  )
-                }
-              >
-                <Ionicons name="chevron-back" size={16} color={PRIMARY} />
-              </Pressable>
-              <Text style={styles.calendarTitle}>
-                {formatMonthTitle(calendarMonth)}
-              </Text>
-              <Pressable
-                style={styles.calendarArrow}
-                onPress={() =>
-                  setCalendarMonth(
-                    new Date(
-                      calendarMonth.getFullYear(),
-                      calendarMonth.getMonth() + 1,
-                      1
-                    )
-                  )
-                }
-              >
-                <Ionicons name="chevron-forward" size={16} color={PRIMARY} />
-              </Pressable>
+                  <Text style={[styles.dayNumber, active && styles.dayActive]}>
+                    {d.getDate()}
+                  </Text>
+                  <Text style={[styles.dayLabel, active && styles.dayActive]}>
+                    {formatDayLabel(d)}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          {/* DAILY */}
+          <Animated.View
+            style={[
+              styles.animatedLayer,
+              {
+                opacity: dailyOpacity,
+                pointerEvents: view === "Daily" ? "auto" : "none",
+              },
+            ]}
+          >
+            <View style={styles.dayStrip}>
+              {dayStrip.map((d) => {
+                const active = toKey(d) === selectedKey;
+                return (
+                  <Pressable
+                    key={d.toISOString()}
+                    style={[styles.dayCard, active && styles.dayCardActive]}
+                    onPress={() => setSelectedDate(d)}
+                  >
+                    <Text
+                      style={[styles.dayNumber, active && styles.dayActive]}
+                    >
+                      {d.getDate()}
+                    </Text>
+                    <Text style={[styles.dayLabel, active && styles.dayActive]}>
+                      {formatDayLabel(d)}
+                    </Text>
+                  </Pressable>
+                );
+              })}
             </View>
-            <View style={styles.calendarWeekRow}>
-              {"MTWTFSS".split("").map((label) => (
-                <Text key={label} style={styles.calendarWeekLabel}>
-                  {label}
+
+            {/* TASK TIMELINE */}
+            <View style={styles.timeline}>
+              {tasksToday.map((t) => (
+                <View key={t.id} style={styles.timeRow}>
+                  <Text style={styles.timeLabel}>{t.start}</Text>
+                  <View style={[styles.taskCard, { backgroundColor: t.color }]}>
+                    <Text style={styles.taskTitle}>{t.title}</Text>
+                    <Text style={styles.taskTime}>
+                      {t.start} - {t.end}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+
+              {tasksToday.length === 0 && (
+                <Text style={styles.emptyText}>No tasks for this day</Text>
+              )}
+            </View>
+          </Animated.View>
+
+          {/* MONTHLY */}
+          <Animated.View
+            style={[
+              styles.animatedLayer,
+              {
+                opacity: monthlyOpacity,
+                pointerEvents: view === "Monthly" ? "auto" : "none",
+              },
+            ]}
+          >
+            <View style={styles.dayStrip}>
+              {dayStrip.map((d) => {
+                const active = toKey(d) === selectedKey;
+                return (
+                  <Pressable
+                    key={d.toISOString()}
+                    style={[styles.dayCard, active && styles.dayCardActive]}
+                    onPress={() => setSelectedDate(d)}
+                  >
+                    <Text
+                      style={[styles.dayNumber, active && styles.dayActive]}
+                    >
+                      {d.getDate()}
+                    </Text>
+                    <Text style={[styles.dayLabel, active && styles.dayActive]}>
+                      {formatDayLabel(d)}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <View style={styles.calendarCard}>
+              {/* Header */}
+              <View style={styles.calendarHeader}>
+                <Pressable
+                  style={styles.navBtn}
+                  onPress={() =>
+                    setMonth(
+                      new Date(month.getFullYear(), month.getMonth() - 1, 1)
+                    )
+                  }
+                >
+                  <Ionicons name="chevron-back" size={16} color={PRIMARY} />
+                </Pressable>
+
+                <Text style={styles.calendarTitle}>
+                  {formatMonthTitle(month)}
                 </Text>
+
+                <Pressable
+                  style={styles.navBtn}
+                  onPress={() =>
+                    setMonth(
+                      new Date(month.getFullYear(), month.getMonth() + 1, 1)
+                    )
+                  }
+                >
+                  <Ionicons name="chevron-forward" size={16} color={PRIMARY} />
+                </Pressable>
+              </View>
+
+              {/* Weekday */}
+              <View style={styles.weekHeader}>
+                {["M", "T", "W", "T", "F", "S", "S"].map((d) => (
+                  <Text key={d} style={styles.weekLabel}>
+                    {d}
+                  </Text>
+                ))}
+              </View>
+
+              {/* Days */}
+              {weeks.map((week, i) => (
+                <View key={i} style={styles.calendarWeekRow}>
+                  {week.map(({ date, isCurrentMonth }) => {
+                    const key = toKey(date);
+                    const hasTask = taskMap[key];
+                    const active = key === selectedKey;
+
+                    return (
+                      <Pressable
+                        key={key}
+                        style={[
+                          styles.calendarDay,
+                          active && styles.calendarDayActive,
+                        ]}
+                        onPress={() => {
+                          setSelectedDate(date);
+                          toggleView();
+                        }}
+                      >
+                        <Text
+                          style={[
+                            styles.calendarDayText,
+                            !isCurrentMonth && styles.calendarDayMuted,
+                            active && styles.calendarDayTextActive,
+                          ]}
+                        >
+                          {date.getDate()}
+                        </Text>
+
+                        {hasTask && <View style={styles.taskDot} />}
+                      </Pressable>
+                    );
+                  })}
+                </View>
               ))}
             </View>
-            {calendarWeeks.map((week, index) => (
-              <View key={`week-${index}`} style={styles.calendarWeekRow}>
-                {week.map((day) => {
-                  const active = toDateKey(day.date) === selectedKey;
-                  return (
-                    <Pressable
-                      key={day.date.toISOString()}
-                      style={[
-                        styles.calendarDay,
-                        active && styles.calendarDayActive,
-                      ]}
-                      onPress={() => setSelectedDate(day.date)}
-                    >
-                      <Text
-                        style={[
-                          styles.calendarDayText,
-                          !day.isCurrentMonth && styles.calendarDayMuted,
-                          active && styles.calendarDayTextActive,
-                        ]}
-                      >
-                        {day.date.getDate()}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            ))}
-          </View>
-        ) : null}
-
-        <View style={styles.taskList}>
-          {filteredTasks.map((task: ProjectTask) => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              onPress={() =>
-                router.push({
-                  pathname: "/project/task/[id]",
-                  params: { id: task.id, projectId: task.projectId },
-                })
-              }
-            />
-          ))}
+          </Animated.View>
         </View>
       </ScrollView>
-
-      {Platform.OS === "android" && showPicker && (
-        <DateTimePicker
-          value={selectedDate}
-          mode="date"
-          onChange={onPickerChange}
-        />
-      )}
-
-      {Platform.OS === "ios" && (
-        <Modal visible={showPicker} transparent animationType="slide">
-          <View style={styles.modalOverlay}>
-            <View style={styles.pickerSheet}>
-              <DateTimePicker
-                value={selectedDate}
-                mode="date"
-                display="spinner"
-                onChange={onPickerChange}
-              />
-              <Pressable
-                style={styles.pickerDone}
-                onPress={() => setShowPicker(false)}
-              >
-                <Text style={styles.pickerDoneText}>Done</Text>
-              </Pressable>
-            </View>
-          </View>
-        </Modal>
-      )}
     </SafeAreaView>
   );
 };
 
-const TaskCard = ({
-  task,
-  onPress,
-}: {
-  task: ProjectTask;
-  onPress: () => void;
-}) => {
-  return (
-    <Pressable style={styles.taskCard} onPress={onPress}>
-      <View style={styles.taskHeader}>
-        <View style={styles.taskTitleRow}>
-          <View style={styles.taskIcon}>
-            <Ionicons name="flash" size={12} color="#FFFFFF" />
-          </View>
-          <Text style={styles.taskTitle} numberOfLines={2}>
-            {task.title}
-          </Text>
-        </View>
-        <View style={styles.statusPill}>
-          <Text style={styles.statusText}>{task.status}</Text>
-        </View>
-      </View>
-      <View style={styles.taskMetaRow}>
-        <View
-          style={[
-            styles.priorityPill,
-            task.priority === "MEDIUM" && styles.priorityMedium,
-            task.priority === "LOW" && styles.priorityLow,
-          ]}
-        >
-          <Ionicons name="flag" size={12} color="#FFFFFF" />
-          <Text style={styles.priorityText}>{task.priority}</Text>
-        </View>
-        {task.dueDate ? (
-          <View style={styles.dueDateRow}>
-            <Ionicons name="calendar" size={12} color={PRIMARY} />
-            <Text style={styles.dueDateText}>
-              {new Date(task.dueDate).toLocaleDateString("en-GB", {
-                day: "2-digit",
-                month: "short",
-              })}
-            </Text>
-          </View>
-        ) : null}
-      </View>
-    </Pressable>
-  );
-};
+/* ================= STYLES ================= */
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
+  container: { flex: 1, backgroundColor: colors.background },
+
   header: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.lg,
   },
+
+  headerTitle: { fontSize: 18, fontWeight: "600" },
+
   circleButton: {
     width: 40,
     height: 40,
@@ -421,61 +393,23 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: colors.shadow,
-    shadowOpacity: 0.08,
-    shadowOffset: { width: 0, height: 6 },
-    shadowRadius: 10,
-    elevation: 2,
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: colors.text,
-  },
+
   headlineRow: {
     paddingHorizontal: spacing.xl,
     marginTop: spacing.xl,
   },
-  headlineTitle: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  headlineSubtitle: {
-    marginTop: 4,
-    color: colors.textMuted,
-  },
-  viewToggle: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    marginTop: spacing.lg,
-    paddingHorizontal: spacing.xl,
-  },
-  viewTogglePill: {
-    paddingVertical: 8,
-    paddingHorizontal: spacing.lg,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  viewTogglePillActive: {
-    backgroundColor: PRIMARY,
-    borderColor: PRIMARY,
-  },
-  viewToggleText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: colors.textMuted,
-  },
-  viewToggleTextActive: {
-    color: "#FFFFFF",
-  },
+
+  headlineTitle: { fontSize: 24, fontWeight: "700" },
+  headlineSubtitle: { color: colors.textMuted, marginTop: 4 },
+
   dayStrip: {
     flexDirection: "row",
     justifyContent: "space-between",
     paddingHorizontal: spacing.xl,
     marginTop: spacing.lg,
   },
+
   dayCard: {
     width: 60,
     height: 82,
@@ -483,191 +417,136 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
-    borderColor: colors.border,
   },
-  dayCardActive: {
-    backgroundColor: PRIMARY,
-    borderColor: PRIMARY,
+
+  dayCardActive: { backgroundColor: PRIMARY },
+
+  dayNumber: { fontSize: 16, fontWeight: "700" },
+  dayLabel: { fontSize: 12, color: colors.textMuted },
+  dayActive: { color: "#FFF" },
+
+  timeline: {
+    marginTop: spacing.xl,
+    paddingHorizontal: spacing.xl,
   },
-  dayNumber: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: colors.text,
+
+  timeRow: {
+    flexDirection: "row",
+    marginBottom: spacing.lg,
+    alignItems: "center",
   },
-  dayLabel: {
+
+  timeLabel: {
+    width: 60,
     fontSize: 12,
     color: colors.textMuted,
   },
-  dayActiveText: {
-    color: "#FFFFFF",
+
+  taskCard: {
+    flex: 1,
+    borderRadius: 16,
+    padding: spacing.lg,
   },
+
+  taskTitle: { fontWeight: "600", color: "#FFF" },
+  taskTime: { fontSize: 12, color: "#F0F0F0", marginTop: 6 },
+
+  emptyText: {
+    textAlign: "center",
+    color: colors.textMuted,
+    marginTop: spacing.lg,
+  },
+
+  /* ===== CALENDAR ===== */
+
   calendarCard: {
     marginTop: spacing.xl,
     marginHorizontal: spacing.xl,
     backgroundColor: colors.card,
-    borderRadius: 20,
+    borderRadius: 24,
     padding: spacing.lg,
-    shadowColor: colors.shadow,
-    shadowOpacity: 0.06,
-    shadowOffset: { width: 0, height: 6 },
-    shadowRadius: 12,
-    elevation: 2,
+    elevation: 3,
   },
+
   calendarHeader: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: spacing.md,
   },
+
   calendarTitle: {
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: "700",
     color: PRIMARY,
   },
-  calendarArrow: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "#F4F2FF",
+
+  navBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#F3F2FF",
     alignItems: "center",
     justifyContent: "center",
   },
+
+  weekHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: spacing.sm,
+  },
+
+  weekLabel: {
+    width: 32,
+    textAlign: "center",
+    fontSize: 11,
+    fontWeight: "600",
+    color: colors.textMuted,
+  },
+
   calendarWeekRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 6,
   },
-  calendarWeekLabel: {
-    width: 28,
-    textAlign: "center",
-    color: colors.textMuted,
-    fontSize: 11,
-  },
+
   calendarDay: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 32,
+    height: 40,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
   },
+
   calendarDayActive: {
     backgroundColor: "#ECEBFF",
   },
+
   calendarDayText: {
-    fontSize: 11,
+    fontSize: 12,
     color: colors.text,
   },
+
   calendarDayMuted: {
     color: colors.textMuted,
   },
+
   calendarDayTextActive: {
     color: PRIMARY,
     fontWeight: "700",
   },
-  taskList: {
-    marginTop: spacing.xl,
-    paddingHorizontal: spacing.xl,
-    gap: spacing.md,
-  },
-  taskCard: {
-    backgroundColor: colors.card,
-    borderRadius: 20,
-    padding: spacing.lg,
-    shadowColor: colors.shadow,
-    shadowOpacity: 0.06,
-    shadowOffset: { width: 0, height: 6 },
-    shadowRadius: 12,
-    elevation: 2,
-    gap: spacing.md,
-  },
-  taskHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  taskTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    flex: 1,
-  },
-  taskIcon: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+
+  taskDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: PRIMARY,
-    alignItems: "center",
-    justifyContent: "center",
+    marginTop: 2,
   },
-  taskTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: colors.text,
-    flexShrink: 1,
-  },
-  statusPill: {
-    backgroundColor: "#ECEBFF",
-    borderRadius: 999,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-  },
-  statusText: {
-    fontSize: 10,
-    fontWeight: "600",
-    color: PRIMARY,
-  },
-  taskMetaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  priorityPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: 999,
-    backgroundColor: "#FF6B6B",
-  },
-  priorityMedium: {
-    backgroundColor: "#F59E0B",
-  },
-  priorityLow: {
-    backgroundColor: "#22C55E",
-  },
-  priorityText: {
-    fontSize: 10,
-    color: "#FFFFFF",
-    fontWeight: "600",
-  },
-  dueDateRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  dueDateText: {
-    fontSize: 11,
-    color: colors.textMuted,
-  },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: "flex-end",
-    backgroundColor: "rgba(0,0,0,0.3)",
-  },
-  pickerSheet: {
-    backgroundColor: colors.card,
-    paddingBottom: spacing.xl,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-  },
-  pickerDone: {
-    alignSelf: "center",
-    marginTop: spacing.md,
-  },
-  pickerDoneText: {
-    color: PRIMARY,
-    fontWeight: "600",
+  animatedLayer: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
   },
 });
