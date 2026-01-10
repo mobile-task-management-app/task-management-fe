@@ -1,6 +1,5 @@
 import { ProjectTask, TaskPriority } from "@/types/models";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import React, { useMemo, useRef, useState } from "react";
 import {
   Animated,
@@ -85,7 +84,6 @@ const buildMonthMatrix = (month: Date) => {
 
 export const DailyScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
 
   const [view, setView] = useState<"Daily" | "Monthly">("Daily");
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -100,6 +98,12 @@ export const DailyScreen: React.FC = () => {
 
   const { data: taskData } = useSearchTasks({});
   const tasks = taskData?.data.tasks || [];
+  tasks.forEach((t) => {
+    console.log(
+      "Task due date:",
+      t.end_date ? new Date(Date.now() + t.end_date * 1000) : "No due date"
+    );
+  });
   const toggleView = () => {
     const toMonthly = view === "Daily";
     setView(toMonthly ? "Monthly" : "Daily");
@@ -121,7 +125,9 @@ export const DailyScreen: React.FC = () => {
   /* ===== DATA ===== */
 
   const tasksToday = tasks.filter(
-    (t) => t.end_date && toKey(new Date(t.end_date * 1000)) === selectedKey
+    (t) =>
+      t.end_date &&
+      toKey(new Date(Date.now() + t.end_date * 1000)) === selectedKey
   );
 
   const taskMap = useMemo(() => {
@@ -234,15 +240,7 @@ export const DailyScreen: React.FC = () => {
                         )
                       : "All day"}
                   </Text>
-                  <Pressable
-                    style={[styles.taskCard, { backgroundColor: PRIMARY }]}
-                    onPress={() =>
-                      router.push({
-                        pathname: "/project/task/[id]",
-                        params: { id: t.id, projectId: t.project_id },
-                      })
-                    }
-                  >
+                  <View style={[styles.taskCard, { backgroundColor: PRIMARY }]}>
                     <Text style={styles.taskTitle}>{t.title}</Text>
                     <Text style={styles.taskTime}>
                       {t.start_date
@@ -259,7 +257,7 @@ export const DailyScreen: React.FC = () => {
                           )
                         : "All day"}
                     </Text>
-                  </Pressable>
+                  </View>
                 </View>
               ))}
 

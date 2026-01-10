@@ -17,8 +17,9 @@ import { useTaskDetail } from "../../hooks/useTasks";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
 
-const formatReadableDate = (value: string) => {
-  const date = new Date(value);
+const formatReadableDate = (value: number) => {
+  const date = new Date(value * 1000);
+  console.log("Formatting date:", date);
   return date.toLocaleDateString("en-GB", {
     day: "2-digit",
     month: "short",

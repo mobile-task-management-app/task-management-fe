@@ -244,8 +244,8 @@ export interface TaskAttachmentsUploadResponseDTO {
      */
     'end_date'?: number;
     'description': string;
-    'created_at': string;
-    'updated_at': string;
+    'created_at': number;
+    'updated_at': number;
 }
 
 
@@ -287,8 +287,8 @@ export interface TaskResponseDTO {
      */
     'end_date'?: number;
     'description': string;
-    'created_at': string;
-    'updated_at': string;
+    'created_at': number;
+    'updated_at': number;
 }
 
 

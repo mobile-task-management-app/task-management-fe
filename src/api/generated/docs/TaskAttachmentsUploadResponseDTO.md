@@ -16,8 +16,8 @@ Name | Type | Description | Notes
 **start_date** | **number** | Project start date as a Unix timestamp (seconds) | [optional] [default to undefined]
 **end_date** | **number** | Project end date as a Unix timestamp (seconds) | [optional] [default to undefined]
 **description** | **string** |  | [default to undefined]
-**created_at** | **string** |  | [default to undefined]
-**updated_at** | **string** |  | [default to undefined]
+**created_at** | **number** |  | [default to undefined]
+**updated_at** | **number** |  | [default to undefined]
 
 ## Example
 
