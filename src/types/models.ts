@@ -13,7 +13,7 @@ export type Task = {
   color: string;
 };
 
-export type ProjectStatus = "NOT_YET" | "IN_PROGRESS" | "DONE";
+export type ProjectStatus = "TODO" | "IN_PROGRESS" | "DONE";
 
 export type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE" | "CANCELLED";
 export type TaskPriority = "LOW" | "MEDIUM" | "HIGH";

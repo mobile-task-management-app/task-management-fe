@@ -1,15 +1,17 @@
 import { useGetUserProjectSummaries } from "@/hooks/useProjects";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { router, useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Animated,
   FlatList,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import { Swipeable } from "react-native-gesture-handler";
 import {
   SafeAreaView,
   useSafeAreaInsets,
@@ -19,6 +21,7 @@ import { Badge } from "../../components/common/Badge";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
 import { Project } from "../../types/models";
+
 
 export const ProjectsScreen: React.FC = () => {
   const router = useRouter();
@@ -107,10 +110,53 @@ const ProjectRow: React.FC<{
   project: Project;
   onPress: () => void;
 }> = ({ project, onPress }) => {
+  const renderRightActions = (
+      progress: Animated.AnimatedInterpolation<number>,
+      dragX: Animated.AnimatedInterpolation<number>,
+      onEdit: () => void,
+      onDelete: () => void
+    ) => {
+      return (
+        <View style={styles.actionsContainer}>
+          <Pressable
+            style={[styles.actionButton, styles.editButton]}
+            onPress={onEdit}
+          >
+            <Ionicons name="pencil" size={20} color="#FFF" />
+            <Text style={styles.actionText}>Edit</Text>
+          </Pressable>
+  
+          <Pressable
+            style={[styles.actionButton, styles.deleteButton]}
+            onPress={onDelete}
+          >
+            <Ionicons name="trash" size={20} color="#FFF" />
+            <Text style={styles.actionText}>Delete</Text>
+          </Pressable>
+        </View>
+      );
+    };
   const progressWidth =
     `${Math.round(project.progress * 100)}%` as `${number}%`;
 
   return (
+    <Swipeable
+          renderRightActions={(progress, dragX) =>
+            renderRightActions(
+              progress,
+              dragX,
+              () => {
+                // EDIT
+                router.push(`/project/edit/${project.id}`);
+              },
+              () => {
+                // DELETE
+                console.log("Delete project:", project.id);
+              }
+            )
+          }
+          overshootRight={false}
+        >
     <Pressable onPress={onPress} style={styles.card}>
       <View style={styles.rowBetween}>
         <View>
@@ -132,6 +178,7 @@ const ProjectRow: React.FC<{
         </View>
       </View>
     </Pressable>
+    </Swipeable>
   );
 };
 
@@ -237,5 +284,34 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "600",
     color: colors.text,
+  },
+  actionsContainer: {
+    flexDirection: "row",
+    height: "100%",
+  },
+
+  actionButton: {
+    width: 80,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  editButton: {
+    backgroundColor: "#6366F1", // Indigo
+    borderTopLeftRadius: 16,
+    borderBottomLeftRadius: 16,
+  },
+
+  deleteButton: {
+    backgroundColor: "#EF4444", // Red
+    borderTopRightRadius: 16,
+    borderBottomRightRadius: 16,
+  },
+
+  actionText: {
+    color: "#FFF",
+    fontSize: 12,
+    marginTop: 4,
+    fontWeight: "600",
   },
 });

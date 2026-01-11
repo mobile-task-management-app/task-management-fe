@@ -20,10 +20,14 @@ import { AppInput } from "../../components/common/AppInput";
 // import { useCreateProject } from "../../hooks/useProjects";
 import { useCreateProject } from "@/hooks/useProjects";
 import { useQueryClient } from "@tanstack/react-query";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
 
+
+
 export const CreateProjectScreen: React.FC = () => {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [title, setTitle] = useState("");
@@ -36,6 +40,19 @@ export const CreateProjectScreen: React.FC = () => {
   const [showRangePicker, setShowRangePicker] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  type ProjectStatus = "TODO" | "IN_PROGRESS" | "DONE";
+
+  const STATUS_LABEL: Record<ProjectStatus, string> = {
+    TODO: "To do",
+    IN_PROGRESS: "In progress",
+    DONE: "Done",
+  };
+
+  const [status, setStatus] = useState<ProjectStatus>("TODO");
+  const [showStatusPicker, setShowStatusPicker] = useState(false);
+
+
 
   // Hook for API call
   const { mutate, isPending } = useCreateProject(
@@ -128,6 +145,24 @@ export const CreateProjectScreen: React.FC = () => {
         multiline
         style={styles.descriptionInput}
       />
+
+      <Pressable onPress={() => setShowStatusPicker(true)}>
+        <View pointerEvents="none">
+          <AppInput
+            label="Status"
+            value={STATUS_LABEL[status]}
+            placeholder="Select status"
+            right={
+              <Ionicons
+                name="chevron-down"
+                size={18}
+                color={colors.primary}
+              />
+            }
+          />
+        </View>
+      </Pressable>
+
 
       <Pressable
         onPress={() => {
@@ -255,6 +290,57 @@ export const CreateProjectScreen: React.FC = () => {
           </Pressable>
         </Pressable>
       </Modal>
+
+      <Modal visible={showStatusPicker} transparent animationType="fade">
+        <Pressable
+          style={styles.backdrop}
+          onPress={() => setShowStatusPicker(false)}
+        >
+          <Pressable
+            style={[
+              styles.sheet,
+              { paddingBottom: spacing.xl + insets.bottom },
+            ]}
+            onPress={() => null}
+          >
+            <Text style={styles.sheetTitle}>Select Status</Text>
+
+            {(["TODO", "IN_PROGRESS", "DONE"] as ProjectStatus[]).map(
+              (item) => (
+                <Pressable
+                  key={item}
+                  style={[
+                    styles.statusOption,
+                    status === item && styles.statusOptionActive,
+                  ]}
+                  onPress={() => {
+                    setStatus(item);
+                    setShowStatusPicker(false);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.statusText,
+                      status === item && styles.statusTextActive,
+                    ]}
+                  >
+                    {STATUS_LABEL[item]}
+                  </Text>
+
+                  {status === item && (
+                    <Ionicons
+                      name="checkmark"
+                      size={18}
+                      color={colors.primary}
+                    />
+                  )}
+                </Pressable>
+              )
+            )}
+          </Pressable>
+        </Pressable>
+      </Modal>
+
     </SafeAreaView>
   );
 };
@@ -348,4 +434,29 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     textAlign: "center",
   },
+  statusOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: 12,
+    backgroundColor: "#F9FAFB",
+    // bottom:
+  },
+
+  statusOptionActive: {
+    backgroundColor: "#EEF2FF",
+  },
+
+  statusText: {
+    fontSize: 14,
+    color: colors.text,
+  },
+
+  statusTextActive: {
+    fontWeight: "600",
+    color: colors.primary,
+  },
+
 });

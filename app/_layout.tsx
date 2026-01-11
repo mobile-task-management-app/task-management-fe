@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react-native';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Redirect,
@@ -6,11 +7,11 @@ import {
   useSegments,
 } from "expo-router";
 import React from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Provider } from "react-redux";
 import { CreateActionModal } from "../src/components/modals/CreateActionModal";
 import { useAppSelector } from "../src/state/hooks";
 import { store } from "../src/state/store";
-import * as Sentry from '@sentry/react-native';
 
 Sentry.init({
   dsn: 'https://58b548a6fb8fad337456b6e1337a3367@o4510499789340672.ingest.us.sentry.io/4510675179929600',
@@ -116,12 +117,13 @@ const RootLayoutNav = () => {
 
 const RootLayout = () => {
   return (
-    // 3. Wrap with QueryClientProvider
-    <QueryClientProvider client={queryClient}>
-      <Provider store={store}>
-        <RootLayoutNav />
-      </Provider>
-    </QueryClientProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <QueryClientProvider client={queryClient}>
+        <Provider store={store}>
+          <RootLayoutNav />
+        </Provider>
+      </QueryClientProvider>
+    </GestureHandlerRootView>
   );
 };
 

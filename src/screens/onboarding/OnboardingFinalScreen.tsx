@@ -1,3 +1,4 @@
+import { useKeyboardSheet } from "@/hooks/useKeyboardSheet";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
@@ -5,13 +6,11 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
   Image,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
   View,
-  useWindowDimensions,
+  useWindowDimensions
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppButton } from "../../components/common/AppButton";
@@ -40,6 +39,8 @@ type SheetType = "none" | "signin" | "forgot";
 export const OnboardingFinalScreen: React.FC = () => {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+  const keyboardY = useKeyboardSheet(24);
+
 
   const [activeSheet, setActiveSheet] = useState<SheetType>("none");
   const [showForgot, setShowForgot] = useState(false);
@@ -139,23 +140,27 @@ export const OnboardingFinalScreen: React.FC = () => {
 
       {/* ===== SIGN IN SHEET ===== */}
       <Animated.View
-        style={[styles.sheet, { transform: [{ translateY: signInY }] }]}
+        style={[
+          styles.sheet,
+          {
+            transform: [
+              { translateY: signInY },
+              { translateY: keyboardY }, 
+            ],
+          },
+        ]}
       >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-          style={{ flex: 1 }}
-        >
-          <View style={styles.sheetHandle} />
-          <SignInScreen
-            onSuccess={closeSheet}
-            onForgotPassword={() => setActiveSheet("forgot")}
-          />
-        </KeyboardAvoidingView>
+        <View style={styles.sheetHandle} />
+        <SignInScreen
+          onSuccess={closeSheet}
+          onForgotPassword={() => setActiveSheet("forgot")}
+        />
       </Animated.View>
+
 
       {/* ===== FORGOT PASSWORD SHEET ===== */}
       <Animated.View
-        style={[styles.sheet, { transform: [{ translateY: forgotY }] }]}
+        style={[styles.sheet, { transform: [{ translateY: forgotY }, { translateY: keyboardY }] }]}
       >
         <View style={styles.sheetHandle} />
         <ForgotPasswordSheet onDone={() => {

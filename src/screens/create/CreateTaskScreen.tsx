@@ -22,10 +22,12 @@ import {
   Alert,
   Image,
   ImageSourcePropType,
+  KeyboardAvoidingView,
   Linking,
   Modal,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -332,7 +334,20 @@ export const CreateTaskScreen: React.FC = () => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 20 : 0}
+      >
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingHorizontal: spacing.xl,
+          paddingBottom: 32,
+        }}
+      >
       <View style={styles.header}>
         <Pressable style={styles.backButton} onPress={handleBack}>
           <Ionicons name="chevron-back" size={20} color={colors.text} />
@@ -397,6 +412,8 @@ export const CreateTaskScreen: React.FC = () => {
           onChangeText={setDescription}
           multiline
           style={styles.descriptionInput}
+          returnKeyType="done"
+          blurOnSubmit
         />
 
         <Pressable onPress={() => setShowStatusPicker(true)}>
@@ -455,6 +472,8 @@ export const CreateTaskScreen: React.FC = () => {
         title={isEditing ? "Save Task" : "Create Task"}
         onPress={handleSave}
       />
+      </ScrollView>
+      
 
       {Platform.OS === "android" && showDatePicker && (
         <DateTimePicker
@@ -663,6 +682,7 @@ export const CreateTaskScreen: React.FC = () => {
           </Pressable>
         </Pressable>
       </Modal>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
