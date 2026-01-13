@@ -101,7 +101,9 @@ export const DailyScreen: React.FC = () => {
   tasks.forEach((t) => {
     console.log(
       "Task due date:",
-      t.end_date ? new Date(Date.now() + t.end_date * 1000) : "No due date"
+      t.end_date ? new Date(t.end_date * 1000) : "No due date",
+      "task name",
+      t.title
     );
   });
   const toggleView = () => {
@@ -125,20 +127,14 @@ export const DailyScreen: React.FC = () => {
   /* ===== DATA ===== */
 
   const tasksToday = tasks.filter(
-    (t) =>
-      t.end_date &&
-      toKey(new Date(Date.now() + t.end_date * 1000)) === selectedKey
+    (t) => t.end_date && toKey(new Date(t.end_date * 1000)) === selectedKey
   );
 
   const taskMap = useMemo(() => {
     const map: Record<string, boolean> = {};
     tasks.forEach((t) => {
       map[
-        toKey(
-          t.end_date
-            ? new Date(Date.now() + t.end_date * 1000)
-            : new Date(t.created_at)
-        )
+        toKey(t.end_date ? new Date(t.end_date * 1000) : new Date(t.created_at))
       ] = true;
     });
     return map;
