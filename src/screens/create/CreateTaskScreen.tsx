@@ -152,7 +152,8 @@ export const CreateTaskScreen: React.FC = () => {
 
   const { mutate, isPending } = useCreateProjectTask(Number(projectId));
   const { mutate: updateMutate, isPending: updatePending } = useUpdateTask(
-    Number(taskId)
+    Number(taskId),
+    Number(projectId)
   );
   const queryClient = useQueryClient();
 

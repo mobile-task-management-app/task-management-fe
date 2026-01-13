@@ -1,8 +1,9 @@
 import { useGetProjectDetail } from "@/hooks/useProjects";
 import { useSearchProjectTasks } from "@/hooks/useTasks";
 import { Ionicons } from "@expo/vector-icons";
+import { useQueryClient } from "@tanstack/react-query";
 import { LinearGradient } from "expo-linear-gradient";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
   Image,
@@ -47,6 +48,8 @@ const getProgressForStatus = (status: string) => {
 };
 
 export const ProjectDetailScreen: React.FC = () => {
+  
+  const queryClient = useQueryClient();
   const router = useRouter();
   const { id: projectId } = useLocalSearchParams<{ id?: string }>();
   const { height } = useWindowDimensions();
@@ -86,6 +89,14 @@ export const ProjectDetailScreen: React.FC = () => {
   }, [filter, tasks]);
 
   const headerHeight = Math.max(height * 0.2, 260);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      queryClient.invalidateQueries({
+        queryKey: ["project-tasks", Number(projectId)],
+      });
+    }, [projectId])
+  );
 
   if (projectLoading || tasksLoading) {
     return (
@@ -168,7 +179,7 @@ export const ProjectDetailScreen: React.FC = () => {
                   key={task.id}
                   task={task}
                   onPress={() =>
-                    router.push({
+                    router.replace({
                       pathname: "/project/task/[id]",
                       params: { id: task.id, projectId: project.id },
                     })
@@ -185,7 +196,7 @@ export const ProjectDetailScreen: React.FC = () => {
           <AppButton
             title="Create Task"
             onPress={() =>
-              router.push({
+              router.replace({
                 pathname: "/create-task",
                 params: { projectId: project.id },
               })

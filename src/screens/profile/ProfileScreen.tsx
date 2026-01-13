@@ -46,7 +46,7 @@ export const ProfileScreen: React.FC = () => {
       <Section title="ACCOUNT">
         <ProfileItem
           onPress={() => {
-            router.push("/update-profile");
+            router.replace("/update-profile");
           }}
           icon="person"
           label="Personal Data"

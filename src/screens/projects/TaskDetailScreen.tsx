@@ -165,7 +165,7 @@ export const TaskDetailScreen: React.FC = () => {
       <AppButton
         title="Edit Task"
         onPress={() =>
-          router.push({
+          router.replace({
             pathname: "/edit-task",
             params: { taskId: task.id, projectId: task.project_id },
           })

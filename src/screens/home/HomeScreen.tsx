@@ -5,8 +5,9 @@ import { AppButton } from "@/components/common/AppButton";
 import { useGetUserProjectSummaries } from "@/hooks/useProjects";
 import { signIn } from "@/state/authSlice";
 import { useAppDispatch } from "@/state/hooks";
+import { useQueryClient } from "@tanstack/react-query";
 import { BlurView } from "expo-blur";
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -85,6 +86,14 @@ export const HomeScreen: React.FC = () => {
       router.setParams({ welcome: undefined });
     }
   }, [welcome]);
+  const queryClient = useQueryClient();
+  useFocusEffect(
+    React.useCallback(() => {
+      queryClient.invalidateQueries({
+        queryKey: ["project-summaries"],
+      });
+    }, [])
+  );
   // 1. Handle Loading State
   const allProjects: Project[] = useMemo(() => {
     return (

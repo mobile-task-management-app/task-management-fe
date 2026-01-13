@@ -1,5 +1,5 @@
 import { projectTaskApi, taskApi } from "@/api/client";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   CreateProjectTaskRequestDTO,
   ProjectTaskControllerCreateProjectTask200Response,
@@ -19,12 +19,13 @@ export type SearchProjectTaskQuery = {
   asc?: boolean;
 };
 
+
 export const useSearchProjectTasks = (
   projectId: number,
   params: SearchProjectTaskQuery
 ) => {
   return useQuery({
-    queryKey: ["project-tasks-search", projectId, params],
+    queryKey: ["project-tasks", projectId, params],
     queryFn: async () => {
       const response =
         await projectTaskApi.projectTaskControllerSearchProjectTasks(
@@ -66,6 +67,8 @@ export const useCreateProjectTask = (
   ) => void,
   onError?: (error: any) => void
 ) => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (data: CreateProjectTaskRequestDTO) => {
       const response =
@@ -75,27 +78,59 @@ export const useCreateProjectTask = (
         );
       return response.data;
     },
-    onSuccess: onSuccess,
-    onError: onError,
+    onSuccess: (data, variables) => {
+      // ✅ Project task list
+      queryClient.invalidateQueries({
+        queryKey: ["project-tasks", projectId],
+      });
+
+      // ✅ Home summary (QUAN TRỌNG)
+      queryClient.invalidateQueries({
+        queryKey: ["project-summaries"],
+      });
+
+      onSuccess?.(data, variables);
+    },
+    onError,
   });
 };
 export const useUpdateTask = (
   taskId: number,
+  projectId: number,
   onSuccess?: (
     response: TaskControllerGetTaskById200Response,
-    variables: Partial<CreateProjectTaskRequestDTO>
+    variables: Partial<UpdateTaskRequestDTO>
   ) => void,
   onError?: (error: any) => void
 ) => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (data: Partial<UpdateTaskRequestDTO>) => {
       const response = await taskApi.taskControllerUpdateTask(taskId, data);
       return response.data;
     },
-    onSuccess: onSuccess,
-    onError: onError,
+    onSuccess: (data, variables) => {
+      // 1️⃣ Task detail
+      queryClient.invalidateQueries({
+        queryKey: ["task-detail", taskId],
+      });
+
+      // 2️⃣ ALL project task lists (KỂ CẢ FILTER)
+      queryClient.invalidateQueries({
+        queryKey: ["project-tasks", projectId],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["project-summaries"],
+      });
+
+      onSuccess?.(data, variables);
+    },
+    onError,
   });
 };
+
 export const useSearchTasks = (params: SearchProjectTaskQuery) => {
   return useQuery({
     queryKey: ["tasks-search", params],

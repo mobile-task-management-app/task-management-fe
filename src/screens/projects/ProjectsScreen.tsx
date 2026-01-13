@@ -93,7 +93,7 @@ export const ProjectsScreen: React.FC = () => {
           <ProjectRow
             project={item}
             onPress={() =>
-              router.push({
+              router.replace({
                 pathname: "/project/[id]",
                 params: { id: item.id },
               })
@@ -147,7 +147,7 @@ const ProjectRow: React.FC<{
               dragX,
               () => {
                 // EDIT
-                router.push(`/project/edit/${project.id}`);
+                router.replace(`/project/edit/${project.id}`);
               },
               () => {
                 // DELETE
